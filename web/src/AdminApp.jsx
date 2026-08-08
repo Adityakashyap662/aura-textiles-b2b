@@ -636,6 +636,10 @@ export default function AdminApp() {
 
   const executeLogout = () => {
     setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    setShowPassword(false);
+    setLoginError('');
     localStorage.removeItem('adminSession');
     setShowLogoutConfirmModal(false);
     showToast('info', 'Logged Out', 'Your administrative session has ended.');
