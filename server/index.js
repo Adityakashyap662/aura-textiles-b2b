@@ -13,6 +13,24 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aura_t
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// ── AUTOMATED GITHUB DEPLOYMENT WEBHOOK ──
+app.post('/api/deploy-webhook', (req, res) => {
+  console.log('🚀 [GitHub Webhook Triggered] Starting Auto-Deployment...');
+  const { exec } = require('child_process');
+  
+  const deployScript = `cd ~/aura-textiles-b2b && git pull origin main && cd web && npm install && npm run build && cd .. && mkdir -p ~/htdocs/wholesaletshirt.org && cp -r web/dist/* ~/htdocs/wholesaletshirt.org/ && pm2 reload aura-b2b || pm2 restart aura-b2b`;
+  
+  exec(deployScript, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`❌ [Auto-Deploy Error]: ${error.message}`);
+      return;
+    }
+    console.log(`✅ [Auto-Deploy Output]:\n${stdout}`);
+  });
+
+  res.status(200).json({ status: 'success', message: 'Auto-deployment triggered successfully!' });
+});
+
 // ── 1. MONGODB DATABASE CONNECTION & INITIAL SEEDING ENGINE ──
 let isMongoConnected = false;
 
