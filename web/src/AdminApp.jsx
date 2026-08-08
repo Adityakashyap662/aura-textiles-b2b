@@ -97,6 +97,22 @@ export default function AdminApp() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
+  // Admin Registered Credentials State
+  const [adminEmail, setAdminEmail] = useState(() => localStorage.getItem('adminEmail') || 'daczar.admin@auratextiles.com');
+  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('adminPassword') || 'Daczar@C123');
+
+  // Forgot Password Workflow State
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: Email | 2: OTP | 3: New Password
+  const [forgotEmailInput, setForgotEmailInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+
   // App Layout States
   const [activeTab, setActiveTab] = useState('dashboard');
   const [productSubTab, setProductSubTab] = useState('items'); // 'items' | 'categories'
@@ -535,7 +551,13 @@ export default function AdminApp() {
   // Handle Admin Login Verification
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (username.trim() === 'admin' && password === 'Admin@123') {
+    const currentSavedPassword = localStorage.getItem('adminPassword') || 'Daczar@C123';
+    const currentSavedEmail = (localStorage.getItem('adminEmail') || 'daczar.admin@auratextiles.com').toLowerCase();
+    
+    const inputUser = username.trim().toLowerCase();
+    const isValidUsername = inputUser === 'daczar' || inputUser === 'admin' || inputUser === currentSavedEmail;
+
+    if (isValidUsername && password === currentSavedPassword) {
       setIsLoggedIn(true);
       setLoginError('');
       localStorage.setItem('adminSession', 'true');
@@ -544,6 +566,66 @@ export default function AdminApp() {
       setLoginError('Invalid Administrator Username or Password.');
       showToast('error', 'Access Denied', 'Authentication failed.');
     }
+  };
+
+  // Forgot Password: Step 1 Send OTP
+  const handleRequestOtp = (e) => {
+    e.preventDefault();
+    if (!forgotEmailInput || !forgotEmailInput.includes('@')) {
+      setForgotError('Please enter a valid administrator email address.');
+      return;
+    }
+    setForgotError('');
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    setForgotStep(2);
+    setForgotSuccess(`OTP Code generated: ${code}`);
+    showToast('info', 'OTP Generated', `Verification code ${code} sent to ${forgotEmailInput}`);
+  };
+
+  // Forgot Password: Step 2 Verify OTP
+  const handleVerifyOtp = (e) => {
+    e.preventDefault();
+    if (otpInput.trim() === generatedOtp) {
+      setForgotError('');
+      setForgotSuccess('OTP Code Verified! Set your new administrator password.');
+      setForgotStep(3);
+    } else {
+      setForgotError('Invalid OTP Code. Please check and try again.');
+    }
+  };
+
+  // Forgot Password: Step 3 Save New Password
+  const handleResetPassword = (e) => {
+    e.preventDefault();
+    if (!newPasswordInput || newPasswordInput.length < 6) {
+      setForgotError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setForgotError('New Password and Confirm Password do not match.');
+      return;
+    }
+
+    setForgotError('');
+    localStorage.setItem('adminPassword', newPasswordInput);
+    setAdminPassword(newPasswordInput);
+    
+    // Save email if updated
+    if (forgotEmailInput) {
+      localStorage.setItem('adminEmail', forgotEmailInput);
+      setAdminEmail(forgotEmailInput);
+    }
+
+    setShowForgotPasswordModal(false);
+    setForgotStep(1);
+    setForgotEmailInput('');
+    setOtpInput('');
+    setNewPasswordInput('');
+    setConfirmPasswordInput('');
+    setForgotSuccess('');
+    
+    showToast('success', 'Password Updated', 'Administrator password updated successfully! Sign in with your new password.');
   };
 
   const handleLogout = () => {
@@ -1177,11 +1259,126 @@ export default function AdminApp() {
             </div>
           </div>
 
+          {/* Forgot Password Link */}
+          <div style={{ textAlign: 'right', marginTop: '-12px', marginBottom: '20px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotPasswordModal(true);
+                setForgotStep(1);
+                setForgotError('');
+                setForgotSuccess('');
+                setForgotEmailInput(adminEmail);
+              }}
+              style={{ background: 'none', border: 'none', color: '#d4af37', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           <button type="submit" className="btn-gold" style={{ width: '100%', height: '46px', padding: '12px', fontSize: '14px', fontWeight: '800', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '10px' }}>
             <Shield size={18} />
             Sign In to Admin Console
           </button>
         </form>
+
+        {/* FORGOT PASSWORD MODAL */}
+        {showForgotPasswordModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: '#0d0d0d', border: '1.5px solid #d4af37', borderRadius: '16px', padding: '28px', maxWidth: '420px', width: '100%', boxShadow: '0 25px 60px rgba(0,0,0,0.95)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#D4AF37', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🔑 Admin Password Recovery
+                </h3>
+                <button type="button" onClick={() => setShowForgotPasswordModal(false)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+
+              {forgotError && (
+                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#EF4444', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', marginBottom: '14px' }}>
+                  ⚠️ {forgotError}
+                </div>
+              )}
+
+              {forgotSuccess && (
+                <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', marginBottom: '14px', fontWeight: 'bold' }}>
+                  ✅ {forgotSuccess}
+                </div>
+              )}
+
+              {/* STEP 1: ENTER EMAIL */}
+              {forgotStep === 1 && (
+                <form onSubmit={handleRequestOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Registered Administrator Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. daczar.admin@auratextiles.com"
+                      value={forgotEmailInput}
+                      onChange={e => setForgotEmailInput(e.target.value)}
+                      required
+                      style={{ ...adminInputStyle, color: '#FFF' }}
+                    />
+                  </div>
+                  <button type="submit" style={{ ...adminBtnStyle, width: '100%', background: '#d4af37', color: '#000', fontWeight: '800', border: 'none' }}>
+                    📩 Send Verification OTP Code
+                  </button>
+                </form>
+              )}
+
+              {/* STEP 2: ENTER OTP */}
+              {forgotStep === 2 && (
+                <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Enter 6-Digit OTP Code</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 882910"
+                      maxLength={6}
+                      value={otpInput}
+                      onChange={e => setOtpInput(e.target.value)}
+                      required
+                      style={{ ...adminInputStyle, color: '#FFF', letterSpacing: '4px', fontSize: '18px', textAlign: 'center', fontWeight: 'bold' }}
+                    />
+                  </div>
+                  <button type="submit" style={{ ...adminBtnStyle, width: '100%', background: '#10b981', color: '#fff', fontWeight: '800', border: 'none' }}>
+                    ✅ Verify OTP Code
+                  </button>
+                </form>
+              )}
+
+              {/* STEP 3: RESET PASSWORD */}
+              {forgotStep === 3 && (
+                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>New Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPasswordInput}
+                      onChange={e => setNewPasswordInput(e.target.value)}
+                      required
+                      style={{ ...adminInputStyle, color: '#FFF' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px' }}>Confirm New Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPasswordInput}
+                      onChange={e => setConfirmPasswordInput(e.target.value)}
+                      required
+                      style={{ ...adminInputStyle, color: '#FFF' }}
+                    />
+                  </div>
+                  <button type="submit" style={{ ...adminBtnStyle, width: '100%', background: '#d4af37', color: '#000', fontWeight: '800', border: 'none' }}>
+                    💾 Save New Password
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
