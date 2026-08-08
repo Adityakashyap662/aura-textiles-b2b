@@ -375,26 +375,41 @@ async function generateOTP(email) {
 async function sendOTPEmail(email, otp, subjectType = 'Verification') {
   if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.startsWith('xkeysib-')) {
     try {
-      const brevoClient = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
-      const data = await brevoClient.transactionalEmails.sendTransacEmail({
-        subject: `🔐 Your Aura Textiles B2B ${subjectType} OTP Code: ${otp}`,
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; background-color: #0b0c10; color: #fff; padding: 30px; border-radius: 12px; max-width: 500px;">
-            <h2 style="color: #d4af37; margin-bottom: 10px;">AURA TEXTILES B2B EXPORT</h2>
-            <p style="color: #cbd5e1; font-size: 14px;">Your 6-digit ${subjectType} OTP code is:</p>
-            <div style="font-size: 32px; font-weight: bold; color: #d4af37; letter-spacing: 6px; padding: 15px 0; text-align: center; background: rgba(212,175,55,0.15); border: 1.5px solid #d4af37; border-radius: 8px; margin: 15px 0;">
-              ${otp}
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { name: 'Aura Textiles B2B Export', email: 'adityakashyap662@gmail.com' },
+          to: [{ email: email }],
+          subject: `🔐 Your Aura Textiles B2B ${subjectType} OTP Code: ${otp}`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; background-color: #0b0c10; color: #fff; padding: 30px; border-radius: 12px; max-width: 500px; border: 1.5px solid #d4af37;">
+              <h2 style="color: #d4af37; margin-bottom: 10px; font-size: 22px;">AURA TEXTILES B2B EXPORT</h2>
+              <p style="color: #cbd5e1; font-size: 14px;">Your 6-digit ${subjectType} OTP code is:</p>
+              <div style="font-size: 34px; font-weight: bold; color: #d4af37; letter-spacing: 8px; padding: 16px 0; text-align: center; background: rgba(212,175,55,0.15); border: 1.5px solid #d4af37; border-radius: 8px; margin: 18px 0;">
+                ${otp}
+              </div>
+              <p style="color: #94a3b8; font-size: 12px;">This verification code will expire in 10 minutes. Please do not share it with anyone.</p>
+              <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;" />
+              <p style="color: #64748b; font-size: 11px;">Aura Textiles B2B Export Unit — Noida Sector 63, UP, India</p>
             </div>
-            <p style="color: #94a3b8; font-size: 12px;">This code will expire in 10 minutes. Please do not share it with anyone.</p>
-          </div>
-        `,
-        sender: { name: 'Aura Textiles B2B Export', email: 'no-reply@auratextiles.in' },
-        to: [{ email: email }],
+          `
+        })
       });
-      console.log(`[Brevo Live SDK 300/Day] Sent 6-Digit OTP to ${email}. ID: ${data?.messageId || 'OK'}`);
-      return;
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`🚀 [Brevo Live Delivery Success] Sent 6-Digit OTP to ${email}. MessageId: ${data?.messageId || 'OK'}`);
+        return;
+      } else {
+        console.log(`⚠️ [Brevo API Error Response]: ${JSON.stringify(data)}. Fallback to Nodemailer...`);
+      }
     } catch (err) {
-      console.log(`[Brevo SDK Error] ${err.message}. Trying Nodemailer...`);
+      console.log(`❌ [Brevo API Request Error]: ${err.message}. Fallback to Nodemailer...`);
     }
   }
 
