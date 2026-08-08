@@ -259,11 +259,22 @@ let memoryOrders = [...initialOrdersSeed];
 let memoryCatalogs = [...initialCatalogsSeed];
 const memoryOtpStore = new Map();
 
-// ── 2. EMAIL TRANSPORTER INITIALIZATION (BREVO / GMAIL / ETHEREAL AUTO MAILER) ──
+// ── 2. EMAIL TRANSPORTER INITIALIZATION (BREVO / HOSTINGER / GMAIL / ETHEREAL) ──
 let liveTransporter = null;
 
 async function initTransporter() {
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    liveTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: Number(process.env.SMTP_PORT) === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+    console.log(`[SMTP Transport Active] Host: ${process.env.SMTP_HOST} | User: ${process.env.SMTP_USER}`);
+  } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     liveTransporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
