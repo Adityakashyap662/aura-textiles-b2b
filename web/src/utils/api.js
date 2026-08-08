@@ -1,4 +1,15 @@
-const BASE_URL = 'http://localhost:5050/api';
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location) {
+    const origin = window.location.origin;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return origin.includes('5173') ? 'http://localhost:3000/api' : `${origin}/api`;
+    }
+    return `${origin}/api`;
+  }
+  return '/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 export const api = {
   // Exchange Rates & Currency Conversion

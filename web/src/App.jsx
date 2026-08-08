@@ -987,6 +987,7 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
+                setPlpCategory('all');
                 if (currentScreen !== 'plp') setCurrentScreen('plp');
               }}
               style={{ paddingLeft: '42px', borderRadius: '30px' }}
@@ -1179,22 +1180,76 @@ export default function App() {
               fontWeight: '600',
             }}
           >
-            <span onClick={() => handleNav('home')} style={{ cursor: 'pointer', color: currentScreen === 'home' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('home')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'home' ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'home' ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               Home Hub
             </span>
-            <span onClick={() => handleNav('plp', 'all')} style={{ cursor: 'pointer', color: currentScreen === 'plp' && plpCategory === 'all' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('plp', 'all')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'plp' && plpCategory === 'all' && !searchQuery ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'plp' && plpCategory === 'all' && !searchQuery ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               All Wholesale Catalogs
             </span>
-            <span onClick={() => handleNav('plp', 'men_sherwanis')} style={{ cursor: 'pointer', color: plpCategory === 'men_sherwanis' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('plp', 'men_sherwanis')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'plp' && plpCategory === 'men_sherwanis' ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'plp' && plpCategory === 'men_sherwanis' ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               Men's Sherwanis & Kurtas
             </span>
-            <span onClick={() => handleNav('plp', 'sarees')} style={{ cursor: 'pointer', color: plpCategory === 'sarees' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('plp', 'sarees')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'plp' && plpCategory === 'sarees' ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'plp' && plpCategory === 'sarees' ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               Women's Silk Sarees
             </span>
-            <span onClick={() => handleNav('reseller')} style={{ cursor: 'pointer', color: currentScreen === 'reseller' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('reseller')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'reseller' ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'reseller' ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               B2B Reseller Program
             </span>
-            <span onClick={() => handleNav('about')} style={{ cursor: 'pointer', color: currentScreen === 'about' ? '#d4af37' : '#94a3b8' }}>
+            <span
+              onClick={() => handleNav('about')}
+              style={{
+                cursor: 'pointer',
+                color: currentScreen === 'about' ? '#d4af37' : '#94a3b8',
+                paddingBottom: '4px',
+                borderBottom: currentScreen === 'about' ? '2px solid #d4af37' : '2px solid transparent',
+                transition: 'all 0.2s',
+              }}
+            >
               Noida Factory & About
             </span>
           </div>
