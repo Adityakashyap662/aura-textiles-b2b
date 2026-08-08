@@ -1,13 +1,24 @@
-export const validatePincode = (pincode) => {
-  if (!pincode) return { valid: false, message: 'Please enter a pincode' };
-  const cleaned = pincode.toString().trim();
-  if (cleaned.length !== 6) return { valid: false, message: 'Pincode must be 6 digits' };
-  if (!/^\d{6}$/.test(cleaned)) return { valid: false, message: 'Pincode must contain only digits' };
+import { countries } from '../data/countries';
 
-  // Simulate valid pincodes (Indian postal codes starting with 1-8)
-  const firstDigit = parseInt(cleaned[0]);
-  if (firstDigit < 1 || firstDigit > 8) {
-    return { valid: false, message: 'Invalid pincode' };
+export const validatePincode = (pincode, countryName = 'India') => {
+  if (!pincode) return { valid: false, message: 'Please enter a zip/pincode' };
+  const cleaned = pincode.toString().trim();
+
+  const country = countries.find(
+    (c) => c.name.toLowerCase() === countryName.toLowerCase()
+  );
+
+  if (country) {
+    if (!country.zipRegex.test(cleaned)) {
+      return {
+        valid: false,
+        message: `Invalid format. Expected: ${country.zipFormatHelp}`,
+      };
+    }
+  } else {
+    if (cleaned.length < 5 || cleaned.length > 7 || !/^\d+$/.test(cleaned)) {
+      return { valid: false, message: 'Invalid zip/pincode format' };
+    }
   }
 
   return { valid: true, message: '' };
@@ -16,8 +27,7 @@ export const validatePincode = (pincode) => {
 export const validatePhone = (phone) => {
   if (!phone) return { valid: false, message: 'Please enter a phone number' };
   const cleaned = phone.toString().replace(/\D/g, '');
-  if (cleaned.length !== 10) return { valid: false, message: 'Phone number must be 10 digits' };
-  if (!/^[6-9]\d{9}$/.test(cleaned)) return { valid: false, message: 'Invalid Indian phone number' };
+  if (cleaned.length < 8 || cleaned.length > 15) return { valid: false, message: 'Phone number must be 8-15 digits' };
   return { valid: true, message: '' };
 };
 
@@ -34,18 +44,16 @@ export const validateName = (name) => {
   return { valid: true, message: '' };
 };
 
-// Mock delivery check based on pincode
-export const checkDelivery = (pincode) => {
-  const valid = validatePincode(pincode);
+// Mock delivery check based on pincode & country
+export const checkDelivery = (pincode, countryName = 'India') => {
+  const valid = validatePincode(pincode, countryName);
   if (!valid.valid) return { available: false, message: valid.message };
 
-  // Simulate some pincodes that don't deliver
-  const noDelivery = ['100000', '200000', '800000'];
-  if (noDelivery.includes(pincode)) {
-    return { available: false, message: 'We do not deliver to this area yet.' };
+  const noDelivery = ['100000', '200000', '800000', '90210', '00000'];
+  if (noDelivery.includes(pincode.toString().trim())) {
+    return { available: false, message: 'We do not deliver to this zip/pincode.' };
   }
 
-  // Generate a delivery date 3-7 days from now
   const days = 3 + Math.floor(Math.random() * 5);
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -69,4 +77,45 @@ export const getCityFromPincode = (pincode) => {
   };
   const first = pincode ? pincode[0] : '4';
   return cityMap[first] || { city: 'Mumbai', state: 'Maharashtra' };
+};
+
+export const verifyZipCodeWithCity = (zipCode, cityName, countryName) => {
+  if (!zipCode || !cityName || !countryName) return { valid: false, message: 'Incomplete address details.' };
+  
+  const cleanedZip = zipCode.toString().trim();
+  const cleanedCity = cityName.toString().trim().toLowerCase();
+  
+  if (countryName.toLowerCase() === 'india') {
+    if (cleanedCity === 'mumbai' && !cleanedZip.startsWith('400')) {
+      return { valid: false, message: 'Mumbai pincodes must start with 400' };
+    }
+    if (cleanedCity === 'pune' && !cleanedZip.startsWith('411')) {
+      return { valid: false, message: 'Pune pincodes must start with 411' };
+    }
+    if (cleanedCity === 'bengaluru' && !cleanedZip.startsWith('560')) {
+      return { valid: false, message: 'Bengaluru pincodes must start with 560' };
+    }
+    if (cleanedCity === 'new delhi' && !cleanedZip.startsWith('110')) {
+      return { valid: false, message: 'New Delhi pincodes must start with 110' };
+    }
+    if (cleanedCity === 'chennai' && !cleanedZip.startsWith('600')) {
+      return { valid: false, message: 'Chennai pincodes must start with 600' };
+    }
+  } else if (countryName.toLowerCase() === 'united states') {
+    if (cleanedCity === 'los angeles' && !cleanedZip.startsWith('900') && !cleanedZip.startsWith('902')) {
+      return { valid: false, message: 'Los Angeles zip codes must start with 900 or 902' };
+    }
+    if (cleanedCity === 'new york city' && !cleanedZip.startsWith('100') && !cleanedZip.startsWith('101') && !cleanedZip.startsWith('102')) {
+      return { valid: false, message: 'New York City zip codes must start with 100, 101, or 102' };
+    }
+    if (cleanedCity === 'houston' && !cleanedZip.startsWith('770') && !cleanedZip.startsWith('772')) {
+      return { valid: false, message: 'Houston zip codes must start with 770 or 772' };
+    }
+  } else if (countryName.toLowerCase() === 'united kingdom') {
+    if (cleanedCity === 'london' && !/^[nw|se|sw|w|ec|wc|e]/i.test(cleanedZip)) {
+      return { valid: false, message: 'London postcodes must start with London area prefixes (e.g. SW, EC, W)' };
+    }
+  }
+  
+  return { valid: true };
 };

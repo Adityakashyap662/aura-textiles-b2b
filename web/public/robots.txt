@@ -1,0 +1,8 @@
+# Allow search engine crawlers to index storefront catalog pages
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+
+# Sitemap Location
+Sitemap: https://www.textileexport.in/sitemap.xml

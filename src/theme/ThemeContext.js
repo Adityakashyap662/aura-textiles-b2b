@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   const theme = isDark ? Colors.dark : Colors.light;
 
@@ -20,7 +20,11 @@ export const ThemeProvider = ({ children }) => {
   const loadTheme = useCallback(async () => {
     try {
       const saved = await AsyncStorage.getItem('theme_preference');
-      if (saved === 'dark') setIsDark(true);
+      if (saved === 'light') {
+        setIsDark(false);
+      } else if (saved === 'dark') {
+        setIsDark(true);
+      }
     } catch (e) {}
   }, []);
 

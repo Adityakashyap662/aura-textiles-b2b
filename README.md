@@ -1,56 +1,92 @@
-# Welcome to your Expo app 👋
+# 🏭 Aura Textiles B2B Wholesale Platform
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+India's Premier B2B Manufacturing & Export Hub Web Application, Admin Portal, and Backend Server for Silk Sarees, Lehenga Cholis, and Ethnic Wear.
 
-## Get started
+---
 
-1. Install dependencies
+## 📁 Repository Structure & Developer Guide
 
-   ```bash
-   npm install
-   ```
+The codebase is organized cleanly into decoupled modules for easy understanding, development, and deployment:
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+├── web/                    # 🌐 FRONTEND WEB APPLICATION (Vite + React)
+│   ├── src/
+│   │   ├── App.jsx         # 🛍️ Storefront Web App (Catalogs, Noida Hub, Cart, Checkout)
+│   │   ├── AdminApp.jsx    # 🔐 Admin Control Center (Products, Orders, Noida Hub Editor, Analysis, Revenue)
+│   │   ├── admin.jsx       # Admin React Entry Point
+│   │   ├── main.jsx        # Storefront React Entry Point
+│   │   └── utils/
+│   │       └── api.js      # Centralized REST API Service Client
+│   ├── index.html          # Storefront HTML Shell
+│   ├── admin.html          # Admin Panel HTML Shell
+│   ├── vite.config.js      # Vite Multi-Page Build Configuration
+│   └── package.json        # Frontend Dependencies
+│
+├── server/                 # ⚙️ BACKEND REST API SERVER (Node.js + Express)
+│   ├── index.js            # Main REST API Express Application & Endpoints
+│   ├── memoryDb.js         # Hybrid In-Memory & File Store Fallback Engine
+│   ├── models.js           # Mongoose Data Schemas (Catalogs, Orders, Users, Content)
+│   ├── seed.js             # Initial Database Seeder
+│   └── package.json        # Backend Dependencies
+│
+├── app.js                  # 🚀 CloudPanel / Hostinger Production Server Entry Point
+├── deploy.sh               # 📦 Automated Production Build & Deployment Script
+└── README.md               # 📖 Developer Documentation
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-### Other setup steps
+## 🛠️ Environment Configuration (.env)
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Create a `.env` file in the `server/` directory:
 
-## Learn more
+```env
+PORT=5050
+MONGODB_URI=mongodb://127.0.0.1:27017/aura_textiles_b2b
+NODE_ENV=production
+JWT_SECRET=aura_textiles_secret_key_2026
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 💻 Local Development Setup
 
-## Join the community
+### 1. Start Backend API Server
+```bash
+cd server
+npm install
+node index.js
+# Backend API runs live on http://localhost:5050 (or port 3000)
+```
 
-Join our community of developers creating universal apps.
+### 2. Start Frontend Web Application
+```bash
+cd web
+npm install
+npm run dev
+# Frontend runs live on http://localhost:5173
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Storefront Website**: `http://localhost:5173/`
+- **Admin Management Portal**: `http://localhost:5173/admin.html`
+
+---
+
+## 🚀 Building & Deploying for Hostinger / CloudPanel
+
+### Step 1: Build Production Assets
+```bash
+cd web
+npm run build
+```
+
+### Step 2: CloudPanel / Hostinger Web App Settings
+- **App Port**: `3000` (or `5050`)
+- **Entry Point / Script**: `app.js`
+- **Root Directory**: `htdocs/wholesaletshirt.org`
+
+---
+
+## 👨‍💻 Developer Credentials & Contacts
+- **Main Developer Account**: `rajnikant.suman07@gmail.com`
+- **Admin Panel Default Credentials**: Username: `admin` | Password: `password`
