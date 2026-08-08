@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   ChevronDown,
   X,
+  Menu,
+  Building,
   Plus,
   Minus,
   Trash2,
@@ -365,12 +367,15 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // General Screen & Category Navigation Handler (Clears search)
   const handleNav = (screen, category = 'all') => {
     setSearchQuery('');
     setPlpCategory(category);
     setCurrentScreen(screen);
     setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
     window.scrollTo(0, 0);
   };
 
@@ -944,31 +949,53 @@ export default function App() {
       {/* Sticky Navigation Header */}
       <header className="glass-nav" style={{ position: 'sticky', top: 0, zIndex: 9999, padding: '14px 24px', overflow: 'visible' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
-          {/* Logo */}
-          <div
-            onClick={() => handleNav('home')}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
-          >
-            <div
+          {/* Logo & Mobile Menu Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="button"
+              className="nav-mobile-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: 'rgba(212, 175, 55, 0.15)',
-                border: '1.5px solid #d4af37',
-                display: 'flex',
+                background: 'rgba(212,175,55,0.15)',
+                border: '1px solid #d4af37',
+                borderRadius: '8px',
+                padding: '8px',
+                color: '#d4af37',
+                cursor: 'pointer',
+                display: 'none',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+              aria-label="Toggle Mobile Menu"
             >
-              <Sparkles size={22} color="#d4af37" />
-            </div>
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: '800', letterSpacing: '2px' }}>
-                AURA <span className="gold-gradient-text">TEXTILES</span>
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
+            <div
+              onClick={() => handleNav('home')}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  background: 'rgba(212, 175, 55, 0.15)',
+                  border: '1.5px solid #d4af37',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Sparkles size={22} color="#d4af37" />
               </div>
-              <div style={{ fontSize: '9px', letterSpacing: '2px', color: '#94a3b8', textTransform: 'uppercase' }}>
-                MEN & WOMEN WHOLESALE B2B
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: '800', letterSpacing: '2px' }}>
+                  AURA <span className="gold-gradient-text">TEXTILES</span>
+                </div>
+                <div style={{ fontSize: '9px', letterSpacing: '2px', color: '#94a3b8', textTransform: 'uppercase' }}>
+                  MEN & WOMEN WHOLESALE B2B
+                </div>
               </div>
             </div>
           </div>
@@ -1255,6 +1282,94 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* MOBILE NAVIGATION DRAWER OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '70px',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(11, 12, 16, 0.98)',
+            backdropFilter: 'blur(20px)',
+            zIndex: 99999,
+            padding: '24px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            overflowY: 'auto',
+            borderTop: '1px solid rgba(212,175,55,0.3)',
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: '800', color: '#d4af37', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>
+            Quick Navigation Menu
+          </div>
+
+          <div
+            onClick={() => handleNav('home')}
+            style={{ padding: '12px 16px', background: currentScreen === 'home' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <Sparkles size={18} color="#d4af37" /> 🏠 Home Hub
+          </div>
+
+          <div
+            onClick={() => handleNav('plp', 'all')}
+            style={{ padding: '12px 16px', background: currentScreen === 'plp' && plpCategory === 'all' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <Grid size={18} color="#d4af37" /> 🛍️ All Wholesale Catalogs
+          </div>
+
+          <div
+            onClick={() => handleNav('plp', 'sarees')}
+            style={{ padding: '12px 16px', background: plpCategory === 'sarees' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <Sparkles size={18} color="#e94560" /> 🥻 Women's Silk Sarees
+          </div>
+
+          <div
+            onClick={() => handleNav('plp', 'men_sherwanis')}
+            style={{ padding: '12px 16px', background: plpCategory === 'men_sherwanis' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <User size={18} color="#d4af37" /> 👔 Men's Sherwanis & Kurtas
+          </div>
+
+          <div
+            onClick={() => handleNav('reseller')}
+            style={{ padding: '12px 16px', background: currentScreen === 'reseller' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <Award size={18} color="#10b981" /> 🤝 B2B Reseller Program
+          </div>
+
+          <div
+            onClick={() => handleNav('about')}
+            style={{ padding: '12px 16px', background: currentScreen === 'about' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+          >
+            <Building size={18} color="#d4af37" /> 🏭 Noida Factory & About Us
+          </div>
+
+          <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => { setB2bQuoteModalVisible(true); setMobileMenuOpen(false); }}
+              className="btn-gold"
+              style={{ width: '100%', padding: '12px', fontSize: '14px' }}
+            >
+              <FileText size={18} /> Request Wholesale Quote
+            </button>
+            <a
+              href="/admin.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline-gold"
+              style={{ width: '100%', padding: '12px', fontSize: '14px', textDecoration: 'none', textAlign: 'center' }}
+            >
+              🔐 Administrator Command Center
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ── 3. MAIN DISPLAY ROUTING ── */}
 
