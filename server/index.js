@@ -396,7 +396,7 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          sender: { name: 'Aura Textiles B2B Export', email: 'adityakashyap662@gmail.com' },
+          sender: { name: 'Aura Textiles B2B Export', email: 'no-reply@wholesaletshirt.org' },
           to: [{ email: email }],
           subject: `🔐 Your Aura Textiles B2B ${subjectType} OTP Code: ${otp}`,
           htmlContent: `
@@ -546,21 +546,86 @@ app.post('/api/auth/login', async (req, res) => {
   });
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ success: false, message: 'Email address is required.' });
+// Universal Send OTP Handler for Registration, Forgot Password & Profile Email Update
+app.post('/api/auth/send-otp', async (req, res) => {
+  const { email, type = 'Verification' } = req.body;
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+  }
 
-  const otp = await generateOTP(email);
-  await sendOTPEmail(email, otp, 'Password Reset');
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Check account existence based on action type
+  let user = null;
+  if (isMongoConnected) {
+    user = await User.findOne({ email: normalizedEmail });
+  } else {
+    user = memoryUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
+  }
+
+  if (type === 'forgot_password' && !user) {
+    return res.status(404).json({
+      success: false,
+      message: 'Account not found with this email address. Please sign up for a new account.',
+    });
+  }
+
+  if (type === 'registration' && user) {
+    return res.status(400).json({
+      success: false,
+      message: 'This email address is already registered. Please sign in or use Forgot Password.',
+    });
+  }
+
+  const otp = await generateOTP(normalizedEmail);
+  const subjectLabel = type === 'registration' ? 'Account Registration' : type === 'forgot_password' ? 'Password Reset' : 'Email Verification';
+  await sendOTPEmail(normalizedEmail, otp, subjectLabel);
 
   res.json({
     success: true,
-    message: `Reset 6-digit OTP code sent to ${email}`,
+    message: `6-digit OTP code sent to ${normalizedEmail}`,
+    otp,
+  });
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ success: false, message: 'Email address is required.' });
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  let user = null;
+  if (isMongoConnected) {
+    user = await User.findOne({ email: normalizedEmail });
+  } else {
+    user = memoryUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
+  }
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'Account not found with this email address. Please sign up for a new account.',
+    });
+  }
+
+  const otp = await generateOTP(normalizedEmail);
+  await sendOTPEmail(normalizedEmail, otp, 'Password Reset');
+
+  res.json({
+    success: true,
+    message: `Reset 6-digit OTP code sent to ${normalizedEmail}`,
+    otp,
   });
 });
 
 app.post('/api/auth/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ success: false, message: 'Email and OTP code are required.' });
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
 
   let valid = false;
@@ -584,17 +649,77 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
-  const { email, newPassword } = req.body;
+  const { email, newPassword, otp } = req.body;
+  if (!email || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Email and new password are required.' });
+  }
+
   const normalizedEmail = email.toLowerCase().trim();
+
+  let user = null;
+  if (isMongoConnected) {
+    user = await User.findOne({ email: normalizedEmail });
+  } else {
+    user = memoryUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
+  }
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'Account not found with this email address. Please sign up for a new account.',
+    });
+  }
 
   if (isMongoConnected) {
     await User.findOneAndUpdate({ email: normalizedEmail }, { password: newPassword });
   } else {
-    const user = memoryUsers.find((u) => u.email.toLowerCase() === normalizedEmail);
-    if (user) user.password = newPassword;
+    user.password = newPassword;
   }
 
   res.json({ success: true, message: 'Password updated successfully! Please log in.' });
+});
+
+// Endpoint to verify OTP and update profile email
+app.post('/api/user/update-email', async (req, res) => {
+  const { userId, newEmail, otp } = req.body;
+  if (!userId || !newEmail || !otp) {
+    return res.status(400).json({ success: false, message: 'User ID, new email, and OTP code are required.' });
+  }
+
+  const normalizedEmail = newEmail.toLowerCase().trim();
+
+  // Verify OTP
+  let valid = false;
+  if (isMongoConnected) {
+    const record = await Otp.findOne({ email: normalizedEmail });
+    if (record && record.otp === otp.trim()) valid = true;
+  } else {
+    const stored = memoryOtpStore.get(normalizedEmail);
+    if (stored && stored.otp === otp.trim() && Date.now() <= stored.expiresAt) valid = true;
+  }
+
+  if (!valid) {
+    return res.status(400).json({ success: false, message: 'Incorrect or expired OTP verification code.' });
+  }
+
+  // Update User Email
+  let updatedUser = null;
+  if (isMongoConnected) {
+    updatedUser = await User.findOneAndUpdate({ id: userId }, { email: normalizedEmail }, { new: true });
+  } else {
+    updatedUser = memoryUsers.find((u) => u.id === userId);
+    if (updatedUser) updatedUser.email = normalizedEmail;
+  }
+
+  if (!updatedUser) {
+    return res.status(404).json({ success: false, message: 'User profile not found.' });
+  }
+
+  res.json({
+    success: true,
+    message: 'Profile email updated successfully!',
+    user: updatedUser,
+  });
 });
 
 app.put('/api/user/profile', async (req, res) => {

@@ -568,18 +568,25 @@ export default function AdminApp() {
   };
 
   // Forgot Password: Step 1 Send OTP
-  const handleRequestOtp = (e) => {
+  const handleRequestOtp = async (e) => {
     e.preventDefault();
     if (!forgotEmailInput || !forgotEmailInput.includes('@')) {
       setForgotError('Please enter a valid administrator email address.');
       return;
     }
     setForgotError('');
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setForgotStep(2);
-    setForgotSuccess(`OTP Code generated: ${code}`);
-    showToast('info', 'OTP Generated', `Verification code ${code} sent to ${forgotEmailInput}`);
+
+    try {
+      const res = await api.forgotPassword(forgotEmailInput.trim());
+      const code = res.otp || Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(code);
+      setForgotStep(2);
+      setForgotSuccess(`Verification OTP Code: ${code}`);
+      showToast('info', 'OTP Generated', `Verification code ${code} sent to ${forgotEmailInput}`);
+    } catch (err) {
+      setForgotError(err.message || 'Account not found with this email address. Please sign up for a new account.');
+      showToast('error', 'Account Not Found', err.message);
+    }
   };
 
   // Forgot Password: Step 2 Verify OTP

@@ -315,6 +315,12 @@ export default function App() {
   const [pdfPreviewCatalog, setPdfPreviewCatalog] = useState(null);
   const [toasts, setToasts] = useState([]);
 
+  // Profile Email Update with OTP State
+  const [showUpdateEmailModal, setShowUpdateEmailModal] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState('');
+  const [emailOtpStep, setEmailOtpStep] = useState(1);
+  const [emailOtpInput, setEmailOtpInput] = useState('');
+
   // Toast Notification Trigger
   const showToast = useCallback((title, message, type = 'gold') => {
     const id = Date.now() + Math.random().toString();
@@ -730,13 +736,14 @@ export default function App() {
       return;
     }
     try {
-      const phoneFull = `${signupCountry.phoneCode} ${signupMobile}`;
-      const data = await api.register(signupName, signupEmail, signupPassword, phoneFull, signupCountry.name);
+      // Step 1: Request Registration OTP from server
+      const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
         setSignupStep(2);
         setSignupOtp(['', '', '', '', '', '']);
         setSignupResendTimer(60);
-        showToast('Verification OTP Sent 📧', `6-digit verification code sent to your email address: ${signupEmail}`);
+        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
+        showToast('Verification OTP Sent 📧', `6-digit code sent to ${signupEmail}.${codeText}`);
       }
     } catch (err) {
       showToast('Registration Error', err.message, 'error');
@@ -747,10 +754,10 @@ export default function App() {
     if (signupResendTimer > 0) return;
     setSignupResendTimer(60);
     try {
-      const phoneFull = `${signupCountry.phoneCode} ${signupMobile}`;
-      const data = await api.register(signupName, signupEmail, signupPassword, phoneFull, signupCountry.name);
+      const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
-        showToast('Fresh OTP Sent 📧', `New 6-digit verification code sent to ${signupEmail}`);
+        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
+        showToast('Fresh OTP Sent 📧', `New 6-digit code sent to ${signupEmail}.${codeText}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');
@@ -765,24 +772,16 @@ export default function App() {
       return;
     }
     try {
-      const data = await api.verifyOtp(signupEmail, enteredOtp);
-      if (data.success) {
+      const verifyRes = await api.verifyOtp(signupEmail, enteredOtp);
+      if (verifyRes.success) {
         const phoneFull = `${signupCountry.phoneCode} ${signupMobile}`;
-        const userObj = {
-          name: signupName,
-          email: signupEmail,
-          phone: phoneFull,
-          boutiqueName: '',
-          address: '',
-          city: '',
-          pincode: '',
-          country: signupCountry.name,
-          currency: 'INR',
-        };
-        setCurrentUser(userObj);
-        setProfileForm(userObj);
-        setSignupModalVisible(false);
-        showToast('Account Verified & Activated! 🎉', `Welcome to Aura Textiles, ${signupName}! You can now surf products.`);
+        const regRes = await api.register(signupName, signupEmail, signupPassword, phoneFull, signupCountry.name);
+        if (regRes.success && regRes.user) {
+          setCurrentUser(regRes.user);
+          setProfileForm(regRes.user);
+          setSignupModalVisible(false);
+          showToast('Account Verified & Activated! 🎉', `Welcome to Aura Textiles, ${signupName}!`);
+        }
       }
     } catch (err) {
       showToast('Verification Failed', err.message, 'error');
@@ -813,6 +812,50 @@ export default function App() {
     }
   };
 
+  const handleRequestUpdateEmailOtp = async (e) => {
+    e.preventDefault();
+    if (!newEmailInput || !newEmailInput.includes('@')) {
+      showToast('Form Error', 'Please enter a valid email address.', 'error');
+      return;
+    }
+    if (currentUser && newEmailInput.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+      showToast('Form Error', 'New email address must be different from current email.', 'error');
+      return;
+    }
+    try {
+      const data = await api.sendOtp(newEmailInput.trim(), 'email_update');
+      if (data.success) {
+        setEmailOtpStep(2);
+        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
+        showToast('OTP Sent 📧', `6-digit verification code sent to ${newEmailInput}.${codeText}`);
+      }
+    } catch (err) {
+      showToast('OTP Request Error', err.message, 'error');
+    }
+  };
+
+  const handleVerifyAndUpdateEmail = async (e) => {
+    e.preventDefault();
+    if (!emailOtpInput || emailOtpInput.trim().length < 6) {
+      showToast('OTP Error', 'Please enter the complete 6-digit OTP code.', 'error');
+      return;
+    }
+    try {
+      const res = await api.updateEmail(currentUser.id, newEmailInput.trim(), emailOtpInput.trim());
+      if (res.success && res.user) {
+        setCurrentUser(res.user);
+        setProfileForm((prev) => ({ ...prev, email: res.user.email }));
+        setShowUpdateEmailModal(false);
+        setNewEmailInput('');
+        setEmailOtpInput('');
+        setEmailOtpStep(1);
+        showToast('Email Updated! ✅', `Your profile email is now ${res.user.email}`);
+      }
+    } catch (err) {
+      showToast('Email Update Error', err.message, 'error');
+    }
+  };
+
   const handleStartForgotPassword = () => {
     setLoginModalVisible(false);
     setForgotModalVisible(true);
@@ -836,10 +879,11 @@ export default function App() {
         setForgotStep(2);
         setForgotOtp(['', '', '', '', '', '']);
         setForgotResendTimer(60);
-        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to your email: ${forgotEmail}`);
+        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
+        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to ${forgotEmail}.${codeText}`);
       }
     } catch (err) {
-      showToast('Error', err.message, 'error');
+      showToast('Account Not Found', err.message || 'Account not found with this email address. Please sign up for a new account.', 'error');
     }
   };
 
@@ -849,7 +893,8 @@ export default function App() {
     try {
       const data = await api.forgotPassword(forgotEmail);
       if (data.success) {
-        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}`);
+        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
+        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}.${codeText}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');
@@ -2449,7 +2494,16 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Email Address</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600' }}>Email Address</label>
+                        <button
+                          type="button"
+                          onClick={() => { setShowUpdateEmailModal(true); setEmailOtpStep(1); setNewEmailInput(''); setEmailOtpInput(''); }}
+                          style={{ background: 'none', border: 'none', color: '#d4af37', fontSize: '11px', fontWeight: '800', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Change Email via OTP 🔐
+                        </button>
+                      </div>
                       <input
                         type="email"
                         required
@@ -3073,6 +3127,73 @@ export default function App() {
                 Sign In
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── UPDATE PROFILE EMAIL VIA OTP MODAL ── */}
+      {showUpdateEmailModal && (
+        <div className="modal-overlay">
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '32px', borderRadius: '20px', position: 'relative' }}>
+            <button onClick={() => setShowUpdateEmailModal(false)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+              <X size={20} />
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)', border: '1px solid #d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
+                <Mail size={24} color="#d4af37" />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: '800', color: '#fff' }}>Update Email Address</h3>
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                {emailOtpStep === 1 ? 'Step 1: Enter your new email address' : 'Step 2: Enter 6-digit OTP sent to your new email'}
+              </p>
+            </div>
+
+            {emailOtpStep === 1 ? (
+              <form onSubmit={handleRequestUpdateEmailOtp}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>Current Email</label>
+                  <input type="email" disabled className="input-dark" value={currentUser?.email || ''} style={{ opacity: 0.6, cursor: 'not-allowed', marginBottom: '14px' }} />
+
+                  <label style={{ fontSize: '12px', color: '#d4af37', display: 'block', marginBottom: '6px', fontWeight: '700' }}>New Email Address (*)</label>
+                  <input
+                    type="email"
+                    required
+                    className="input-dark"
+                    value={newEmailInput}
+                    onChange={(e) => setNewEmailInput(e.target.value)}
+                    placeholder="new.email@domain.com"
+                    style={{ padding: '12px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <button type="submit" className="btn-gold" style={{ width: '100%', padding: '12px', fontWeight: '800' }}>
+                  Send Verification OTP 📩
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyAndUpdateEmail}>
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                  <label style={{ fontSize: '13px', color: '#cbd5e1', display: 'block', marginBottom: '16px' }}>
+                    Enter 6-digit OTP code sent to <strong style={{ color: '#d4af37' }}>{newEmailInput}</strong>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength="6"
+                    className="input-dark"
+                    value={emailOtpInput}
+                    onChange={(e) => setEmailOtpInput(e.target.value)}
+                    placeholder="123456"
+                    style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px', fontWeight: '800', color: '#d4af37', border: '1.5px solid #d4af37' }}
+                  />
+                </div>
+
+                <button type="submit" className="btn-gold" style={{ width: '100%', padding: '12px', fontWeight: '800' }}>
+                  Verify & Update Email ✅
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

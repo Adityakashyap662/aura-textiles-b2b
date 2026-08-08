@@ -46,6 +46,17 @@ export const api = {
     return data;
   },
 
+  sendOtp: async (email, type = 'Verification') => {
+    const res = await fetch(`${BASE_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, type }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Sending OTP failed');
+    return data;
+  },
+
   forgotPassword: async (email) => {
     const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
       method: 'POST',
@@ -54,6 +65,17 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Forgot password failed');
+    return data;
+  },
+
+  updateEmail: async (userId, newEmail, otp) => {
+    const res = await fetch(`${BASE_URL}/user/update-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newEmail, otp }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Email update failed');
     return data;
   },
 
