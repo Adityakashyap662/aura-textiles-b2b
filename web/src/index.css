@@ -315,6 +315,13 @@ html, body {
 
 /* ── UNIVERSAL RESPONSIVE BREAKPOINTS (MOBILE, TABLET, LAPTOP, DESKTOP) ── */
 
+.hide-on-mobile {
+  display: flex !important;
+}
+.show-on-mobile {
+  display: none !important;
+}
+
 @media (max-width: 1024px) {
   .responsive-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
@@ -326,13 +333,25 @@ html, body {
     font-size: 13.5px;
   }
 
+  .hide-on-mobile {
+    display: none !important;
+  }
+  .show-on-mobile {
+    display: flex !important;
+  }
+
   .glass-nav {
     padding: 10px 14px !important;
   }
 
+  .mobile-search-row {
+    margin-top: 10px !important;
+    width: 100% !important;
+  }
+
   .responsive-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
   .hero-section {

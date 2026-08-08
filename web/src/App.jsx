@@ -1000,8 +1000,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div style={{ flex: 1, maxWidth: '450px', position: 'relative' }}>
+          {/* Search Bar (Desktop) */}
+          <div className="hide-on-mobile" style={{ flex: 1, maxWidth: '450px', position: 'relative' }}>
             <Search
               size={18}
               color="#94a3b8"
@@ -1021,8 +1021,101 @@ export default function App() {
             />
           </div>
 
-          {/* Header Action Buttons & Amazon-Style User Profile Menu */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative' }}>
+          {/* Mobile Action Icons (Cart, Wishlist, Profile) */}
+          <div className="show-on-mobile" style={{ alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setCurrentScreen('wishlist')}
+              style={{
+                position: 'relative',
+                background: 'rgba(233, 69, 96, 0.12)',
+                border: '1px solid rgba(233, 69, 96, 0.3)',
+                borderRadius: '8px',
+                padding: '7px 9px',
+                color: '#e94560',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Wishlist"
+            >
+              <Heart size={18} fill={wishlist.length > 0 ? '#e94560' : 'none'} color="#e94560" />
+              {wishlist.length > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: '#e94560',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    padding: '2px 5px',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                  }}
+                >
+                  {wishlist.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setCurrentScreen('cart')}
+              style={{
+                position: 'relative',
+                background: 'rgba(212, 175, 55, 0.12)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRadius: '8px',
+                padding: '7px 9px',
+                color: '#d4af37',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Cart"
+            >
+              <ShoppingBag size={18} />
+              {cart.length > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: '#d4af37',
+                    color: '#000',
+                    borderRadius: '10px',
+                    padding: '2px 5px',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                  }}
+                >
+                  {cart.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => (currentUser ? setCurrentScreen('account') : openLoginModal())}
+              style={{
+                background: 'rgba(212,175,55,0.15)',
+                border: '1px solid #d4af37',
+                borderRadius: '8px',
+                padding: '7px 9px',
+                color: '#d4af37',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              title="Account"
+            >
+              <User size={18} />
+            </button>
+          </div>
+
+          {/* Header Action Buttons & Amazon-Style User Profile Menu (Desktop) */}
+          <div className="hide-on-mobile" style={{ alignItems: 'center', gap: '14px', position: 'relative' }}>
             <button
               onClick={() => setB2bQuoteModalVisible(true)}
               className="btn-outline-gold"
@@ -1188,6 +1281,29 @@ export default function App() {
                 <User size={16} /> Login
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Mobile Dedicated Search Bar */}
+        <div className="show-on-mobile mobile-search-row">
+          <div style={{ width: '100%', position: 'relative' }}>
+            <Search
+              size={16}
+              color="#94a3b8"
+              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+            />
+            <input
+              type="text"
+              className="input-dark"
+              placeholder="Search Silk Sarees, Sherwanis, SKU..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPlpCategory('all');
+                if (currentScreen !== 'plp') setCurrentScreen('plp');
+              }}
+              style={{ paddingLeft: '38px', borderRadius: '24px', fontSize: '12.5px', height: '38px' }}
+            />
           </div>
         </div>
 
