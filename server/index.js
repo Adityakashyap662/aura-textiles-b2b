@@ -266,16 +266,7 @@ let liveTransporter = null;
 
 async function initTransporter() {
   if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.startsWith('xkeysib-')) {
-    liveTransporter = nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'daczar.india@gmail.com',
-        pass: process.env.BREVO_API_KEY,
-      },
-    });
-    console.log(`[Brevo SMTP Relay Active] Universal Global Mailer ready via smtp-relay.brevo.com`);
+    console.log(`[Brevo HTTP v3 REST API Engine Active] Fast Transactional Mailer ready via https://api.brevo.com/v3/smtp/email`);
   } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     liveTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
