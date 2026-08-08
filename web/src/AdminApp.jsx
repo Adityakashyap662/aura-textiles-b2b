@@ -1276,7 +1276,7 @@ export default function AdminApp() {
                 setForgotStep(1);
                 setForgotError('');
                 setForgotSuccess('');
-                setForgotEmailInput(adminEmail);
+                setForgotEmailInput('');
               }}
               style={{ background: 'none', border: 'none', color: '#d4af37', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}
             >
