@@ -271,7 +271,7 @@ async function initTransporter() {
       port: 587,
       secure: false,
       auth: {
-        user: 'adityakashyap662@gmail.com',
+        user: 'daczar.india@gmail.com',
         pass: process.env.BREVO_API_KEY,
       },
     });
@@ -396,7 +396,7 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
           'content-type': 'application/json'
         },
         body: JSON.stringify({
-          sender: { name: 'Aura Textiles B2B Export', email: 'no-reply@wholesaletshirt.org' },
+          sender: { name: 'Aura Textiles B2B Export', email: 'daczar.india@gmail.com' },
           to: [{ email: email }],
           subject: `🔐 Your Aura Textiles B2B ${subjectType} OTP Code: ${otp}`,
           htmlContent: `
