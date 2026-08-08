@@ -561,7 +561,6 @@ export default function AdminApp() {
       setIsLoggedIn(true);
       setLoginError('');
       localStorage.setItem('adminSession', 'true');
-      showToast('success', 'Access Granted', 'Welcome back to the Aura Textiles Command Center.');
     } else {
       setLoginError('Invalid Administrator Username or Password.');
       showToast('error', 'Access Denied', 'Authentication failed.');
