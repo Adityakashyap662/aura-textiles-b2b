@@ -380,8 +380,8 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
   if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.startsWith('xkeysib-')) {
     const candidateSenders = [
       process.env.BREVO_SENDER_EMAIL,
-      'adityakashyap662@gmail.com',
       'daczar.india@gmail.com',
+      'adityakashyap662@gmail.com',
       'daczar.admin@auratextiles.com',
       'orders@wholesaletshirt.org',
     ].filter(Boolean);
@@ -587,7 +587,6 @@ app.post('/api/auth/send-otp', async (req, res) => {
   res.json({
     success: true,
     message: `6-digit OTP code sent to ${normalizedEmail}`,
-    otp,
   });
 });
 
@@ -619,7 +618,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   res.json({
     success: true,
     message: `Reset 6-digit OTP code sent to ${normalizedEmail}`,
-    otp,
   });
 });
 

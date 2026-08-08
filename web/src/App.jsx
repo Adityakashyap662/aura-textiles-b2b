@@ -320,7 +320,6 @@ export default function App() {
   const [newEmailInput, setNewEmailInput] = useState('');
   const [emailOtpStep, setEmailOtpStep] = useState(1);
   const [emailOtpInput, setEmailOtpInput] = useState('');
-  const [latestGeneratedOtp, setLatestGeneratedOtp] = useState('');
 
   // Toast Notification Trigger
   const showToast = useCallback((title, message, type = 'gold') => {
@@ -740,12 +739,10 @@ export default function App() {
       // Step 1: Request Registration OTP from server
       const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
-        if (data.otp) setLatestGeneratedOtp(data.otp);
         setSignupStep(2);
         setSignupOtp(['', '', '', '', '', '']);
         setSignupResendTimer(60);
-        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
-        showToast('Verification OTP Sent 📧', `6-digit code sent to ${signupEmail}.${codeText}`);
+        showToast('Verification OTP Sent 📧', `6-digit code sent to your email: ${signupEmail}`);
       }
     } catch (err) {
       showToast('Registration Error', err.message, 'error');
@@ -758,8 +755,7 @@ export default function App() {
     try {
       const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
-        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
-        showToast('Fresh OTP Sent 📧', `New 6-digit code sent to ${signupEmail}.${codeText}`);
+        showToast('Fresh OTP Sent 📧', `New 6-digit code sent to ${signupEmail}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');
@@ -827,10 +823,8 @@ export default function App() {
     try {
       const data = await api.sendOtp(newEmailInput.trim(), 'email_update');
       if (data.success) {
-        if (data.otp) setLatestGeneratedOtp(data.otp);
         setEmailOtpStep(2);
-        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
-        showToast('OTP Sent 📧', `6-digit verification code sent to ${newEmailInput}.${codeText}`);
+        showToast('OTP Sent 📧', `6-digit verification code sent to ${newEmailInput}`);
       }
     } catch (err) {
       showToast('OTP Request Error', err.message, 'error');
@@ -879,12 +873,10 @@ export default function App() {
     try {
       const data = await api.forgotPassword(forgotEmail);
       if (data.success) {
-        if (data.otp) setLatestGeneratedOtp(data.otp);
         setForgotStep(2);
         setForgotOtp(['', '', '', '', '', '']);
         setForgotResendTimer(60);
-        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
-        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to ${forgotEmail}.${codeText}`);
+        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to ${forgotEmail}`);
       }
     } catch (err) {
       showToast('Account Not Found', err.message || 'Account not found with this email address. Please sign up for a new account.', 'error');
@@ -897,8 +889,7 @@ export default function App() {
     try {
       const data = await api.forgotPassword(forgotEmail);
       if (data.success) {
-        const codeText = data.otp ? ` (Code: ${data.otp})` : '';
-        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}.${codeText}`);
+        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');
@@ -2855,11 +2846,6 @@ export default function App() {
             {forgotStep === 2 && (
               <form onSubmit={handleVerifyForgotOtp}>
                 <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                  {latestGeneratedOtp && (
-                    <div style={{ background: 'rgba(212,175,55,0.15)', border: '1.5px solid #d4af37', padding: '10px 14px', borderRadius: '10px', color: '#d4af37', fontWeight: '800', fontSize: '15px', marginBottom: '16px', textAlign: 'center', letterSpacing: '2px' }}>
-                      🔐 Verification Code: {latestGeneratedOtp}
-                    </div>
-                  )}
                   <label style={{ fontSize: '13px', color: '#cbd5e1', display: 'block', marginBottom: '16px' }}>
                     Enter 6-digit OTP code sent to <strong style={{ color: '#d4af37' }}>{forgotEmail}</strong>
                   </label>
@@ -3078,11 +3064,6 @@ export default function App() {
             {signupStep === 2 && (
               <form onSubmit={handleVerifySignupOtp}>
                 <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-                  {latestGeneratedOtp && (
-                    <div style={{ background: 'rgba(212,175,55,0.15)', border: '1.5px solid #d4af37', padding: '10px 14px', borderRadius: '10px', color: '#d4af37', fontWeight: '800', fontSize: '15px', marginBottom: '16px', textAlign: 'center', letterSpacing: '2px' }}>
-                      🔐 Verification Code: {latestGeneratedOtp}
-                    </div>
-                  )}
                   <label style={{ fontSize: '13px', color: '#cbd5e1', display: 'block', marginBottom: '16px' }}>
                     Enter 6-digit OTP code sent to <strong style={{ color: '#d4af37' }}>{signupEmail}</strong>
                   </label>
@@ -3188,11 +3169,6 @@ export default function App() {
             ) : (
               <form onSubmit={handleVerifyAndUpdateEmail}>
                 <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                  {latestGeneratedOtp && (
-                    <div style={{ background: 'rgba(212,175,55,0.15)', border: '1.5px solid #d4af37', padding: '10px 14px', borderRadius: '10px', color: '#d4af37', fontWeight: '800', fontSize: '15px', marginBottom: '16px', textAlign: 'center', letterSpacing: '2px' }}>
-                      🔐 Verification Code: {latestGeneratedOtp}
-                    </div>
-                  )}
                   <label style={{ fontSize: '13px', color: '#cbd5e1', display: 'block', marginBottom: '16px' }}>
                     Enter 6-digit OTP code sent to <strong style={{ color: '#d4af37' }}>{newEmailInput}</strong>
                   </label>
