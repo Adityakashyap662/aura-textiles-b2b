@@ -628,9 +628,17 @@ export default function AdminApp() {
     showToast('success', 'Password Updated', 'Administrator password updated successfully! Sign in with your new password.');
   };
 
-  const handleLogout = () => {
+  // Logout Confirmation State & Handlers
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+
+  const promptLogoutConfirmation = () => {
+    setShowLogoutConfirmModal(true);
+  };
+
+  const executeLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem('adminSession');
+    setShowLogoutConfirmModal(false);
     showToast('info', 'Logged Out', 'Your administrative session has ended.');
   };
 
@@ -1475,7 +1483,7 @@ export default function AdminApp() {
             </div>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={promptLogoutConfirmation}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -4069,6 +4077,61 @@ export default function AdminApp() {
                 >
                   <MessageCircle size={16} /> Reply on WhatsApp
                 </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LOGOUT CONFIRMATION MODAL POPUP */}
+        {showLogoutConfirmModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: '#0d0d0d', border: '1.5px solid rgba(239,68,68,0.5)', borderRadius: '16px', padding: '28px', maxWidth: '420px', width: '100%', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', textAlign: 'center' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(239,68,68,0.15)', border: '1.5px solid #EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                <LogOut size={28} color="#EF4444" />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#FFF', marginBottom: '8px' }}>
+                Confirm Logout
+              </h3>
+              <p style={{ fontSize: '13.5px', color: '#cbd5e1', lineHeight: '1.5', marginBottom: '24px' }}>
+                Are you sure you want to log out of the <strong>Aura Textiles Admin Command Center</strong>?
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirmModal(false)}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '10px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#FFF',
+                    fontSize: '13.5px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  ❌ No, Stay Logged In
+                </button>
+                <button
+                  type="button"
+                  onClick={executeLogout}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '10px',
+                    background: '#EF4444',
+                    border: 'none',
+                    color: '#FFF',
+                    fontSize: '13.5px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(239,68,68,0.4)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  🚪 Yes, Log Out
+                </button>
               </div>
             </div>
           </div>
