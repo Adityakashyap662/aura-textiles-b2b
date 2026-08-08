@@ -832,7 +832,6 @@ app.post('/api/content/:key', async (req, res) => {
 });
 
 // Serve static frontend files (Storefront & Admin)
-const path = require('path');
 const staticPath = path.join(__dirname, '../web/dist');
 
 app.use(express.static(staticPath));
