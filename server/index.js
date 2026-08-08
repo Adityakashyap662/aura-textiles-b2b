@@ -265,7 +265,18 @@ const memoryOtpStore = new Map();
 let liveTransporter = null;
 
 async function initTransporter() {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.startsWith('xkeysib-')) {
+    liveTransporter = nodemailer.createTransport({
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'adityakashyap662@gmail.com',
+        pass: process.env.BREVO_API_KEY,
+      },
+    });
+    console.log(`[Brevo SMTP Relay Active] Universal Global Mailer ready via smtp-relay.brevo.com`);
+  } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
     liveTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
