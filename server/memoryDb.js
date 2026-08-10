@@ -507,15 +507,97 @@ const defaultOrders = [
   }
 ];
 
+const defaultQuoteFields = [
+  {
+    id: 'field_fabric',
+    label: 'Fabric',
+    key: 'fabric',
+    type: 'select',
+    options: ['100% Combed Cotton (180 GSM)', 'Heavy Super Cotton (220 GSM)', 'Polyester Blend', 'Spun Silk', 'Rayon', 'Heavy Canvas'],
+    required: true,
+    placeholder: 'Select Fabric Type',
+    order: 1,
+    active: true
+  },
+  {
+    id: 'field_quantity',
+    label: 'Quantity',
+    key: 'quantity',
+    type: 'number',
+    options: [],
+    required: true,
+    placeholder: 'e.g., 500 Pcs',
+    order: 2,
+    active: true
+  },
+  {
+    id: 'field_colour',
+    label: 'Colour',
+    key: 'colour',
+    type: 'text',
+    options: [],
+    required: false,
+    placeholder: 'e.g., Navy Blue, Jet Black, Maroon',
+    order: 3,
+    active: true
+  },
+  {
+    id: 'field_customization',
+    label: 'Printing / Embroidery',
+    key: 'customization',
+    type: 'select',
+    options: ['Screen Printing', 'DTF Digital Print', 'Zari Embroidery', 'Sublimation', 'Plain / Unbranded'],
+    required: false,
+    placeholder: 'Select Customization Method',
+    order: 4,
+    active: true
+  },
+  {
+    id: 'field_notes',
+    label: 'Additional Instructions',
+    key: 'notes',
+    type: 'textarea',
+    options: [],
+    required: false,
+    placeholder: 'Size breakdown (S-XXL), target delivery city, or specific requirements...',
+    order: 5,
+    active: true
+  }
+];
+
+const defaultQuoteRequests = [
+  {
+    id: 'qreq_1001',
+    name: 'Vikram Mehta',
+    phone: '+91 98200 12345',
+    email: 'vikram.mehta@boutique.com',
+    fieldsData: {
+      fabric: '100% Combed Cotton (180 GSM)',
+      quantity: '1000 Pcs',
+      colour: 'Jet Black & Royal Blue',
+      customization: 'DTF Digital Print',
+      notes: 'Need 500 S, 300 M, 200 L delivered to Mumbai by 25th August.'
+    },
+    status: 'Pending',
+    createdAt: new Date('2026-08-08T10:00:00.000Z')
+  }
+];
+
 // In-Memory Database Objects
 let categories = [...categoriesData];
 let products = [...productsData];
 let users = [defaultUser];
 let orders = [...defaultOrders];
+let quoteFields = [...defaultQuoteFields];
+let quoteRequests = [...defaultQuoteRequests];
 
 module.exports = {
   categories,
   products,
   users,
-  orders
+  orders,
+  quoteFields,
+  quoteRequests,
+  defaultQuoteFields,
+  defaultQuoteRequests
 };

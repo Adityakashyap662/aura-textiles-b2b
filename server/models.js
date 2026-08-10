@@ -83,11 +83,42 @@ const ContentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── 6. WHOLESALE QUOTE FIELD SCHEMA ──
+const QuoteFieldSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    label: { type: String, required: true },
+    key: { type: String, required: true },
+    type: { type: String, default: 'text' }, // text, number, select, textarea
+    options: { type: Array, default: [] },
+    required: { type: Boolean, default: false },
+    placeholder: { type: String, default: '' },
+    order: { type: Number, default: 1 },
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+// ── 7. WHOLESALE QUOTE REQUEST SCHEMA ──
+const QuoteRequestSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    email: { type: String, default: '' },
+    fieldsData: { type: Object, default: {} },
+    status: { type: String, default: 'Pending' }, // Pending, In Touch, Quoted, Closed
+  },
+  { timestamps: true }
+);
+
 const User = mongoose.model('User', UserSchema);
 const Catalog = mongoose.model('Catalog', CatalogSchema);
 const Order = mongoose.model('Order', OrderSchema);
 const Otp = mongoose.model('Otp', OtpSchema);
 const Content = mongoose.model('Content', ContentSchema);
+const QuoteField = mongoose.model('QuoteField', QuoteFieldSchema);
+const QuoteRequest = mongoose.model('QuoteRequest', QuoteRequestSchema);
 
 module.exports = {
   User,
@@ -95,4 +126,6 @@ module.exports = {
   Order,
   Otp,
   Content,
+  QuoteField,
+  QuoteRequest,
 };

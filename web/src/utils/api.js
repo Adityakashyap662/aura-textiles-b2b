@@ -209,4 +209,100 @@ export const api = {
       return { success: false };
     }
   },
+
+  // Wholesale Quote APIs
+  getQuoteFields: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/quotes/fields`);
+      const data = await res.json();
+      return data.fields || [];
+    } catch (e) {
+      console.warn('API getQuoteFields Error:', e);
+      return [];
+    }
+  },
+
+  getAdminQuoteFields: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/admin/quotes/fields`);
+      const data = await res.json();
+      return data.fields || [];
+    } catch (e) {
+      console.warn('API getAdminQuoteFields Error:', e);
+      return [];
+    }
+  },
+
+  createQuoteField: async (fieldData) => {
+    const res = await fetch(`${BASE_URL}/admin/quotes/fields`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fieldData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Creating quote field failed');
+    return data;
+  },
+
+  updateQuoteField: async (id, fieldData) => {
+    const res = await fetch(`${BASE_URL}/admin/quotes/fields/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fieldData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Updating quote field failed');
+    return data;
+  },
+
+  deleteQuoteField: async (id) => {
+    const res = await fetch(`${BASE_URL}/admin/quotes/fields/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Deleting quote field failed');
+    return data;
+  },
+
+  submitQuoteRequest: async (requestData) => {
+    const res = await fetch(`${BASE_URL}/quotes/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Submitting quote request failed');
+    return data;
+  },
+
+  getQuoteRequests: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/admin/quotes/requests`);
+      const data = await res.json();
+      return data.requests || [];
+    } catch (e) {
+      console.warn('API getQuoteRequests Error:', e);
+      return [];
+    }
+  },
+
+  updateQuoteRequestStatus: async (id, status) => {
+    const res = await fetch(`${BASE_URL}/admin/quotes/requests/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Updating quote request status failed');
+    return data;
+  },
+
+  deleteQuoteRequest: async (id) => {
+    const res = await fetch(`${BASE_URL}/admin/quotes/requests/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Deleting quote request failed');
+    return data;
+  },
 };

@@ -6,7 +6,8 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { BrevoClient } = require('@getbrevo/brevo');
 const mongoose = require('mongoose');
-const { User, Catalog, Order, Otp } = require('./models');
+const { User, Catalog, Order, Otp, QuoteField, QuoteRequest } = require('./models');
+const { defaultQuoteFields, defaultQuoteRequests } = require('./memoryDb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -250,6 +251,18 @@ async function seedMongoDBData() {
       await Order.insertMany(initialOrdersSeed);
       console.log(`[MongoDB Seed] Inserted initial sample order inquiry into MongoDB.`);
     }
+
+    const quoteFieldCount = await QuoteField.countDocuments();
+    if (quoteFieldCount === 0) {
+      await QuoteField.insertMany(defaultQuoteFields);
+      console.log(`[MongoDB Seed] Inserted ${defaultQuoteFields.length} default quote fields into MongoDB.`);
+    }
+
+    const quoteReqCount = await QuoteRequest.countDocuments();
+    if (quoteReqCount === 0) {
+      await QuoteRequest.insertMany(defaultQuoteRequests);
+      console.log(`[MongoDB Seed] Inserted initial sample quote request into MongoDB.`);
+    }
   } catch (err) {
     console.log(`[MongoDB Seed Error] ${err.message}`);
   }
@@ -259,6 +272,8 @@ async function seedMongoDBData() {
 let memoryUsers = [...initialUsersSeed];
 let memoryOrders = [...initialOrdersSeed];
 let memoryCatalogs = [...initialCatalogsSeed];
+let memoryQuoteFields = [...defaultQuoteFields];
+let memoryQuoteRequests = [...defaultQuoteRequests];
 const memoryOtpStore = new Map();
 
 // ── 2. EMAIL TRANSPORTER INITIALIZATION (BREVO / HOSTINGER / GMAIL / ETHEREAL) ──
@@ -965,7 +980,213 @@ app.post('/api/content/:key', async (req, res) => {
   }
   memoryContent[key] = data;
 
-  res.json({ success: true, message: `Content for ${key} updated successfully!`, key, data });
+// ── GET WHOLESALE QUOTE API ENDPOINTS ──
+
+// 1. Get active Quote Fields (Public for Website Form)
+app.get('/api/quotes/fields', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const fields = await QuoteField.find({ active: true }).sort({ order: 1 });
+      return res.json({ success: true, fields });
+    }
+    const fields = memoryQuoteFields.filter((f) => f.active).sort((a, b) => (a.order || 0) - (b.order || 0));
+    res.json({ success: true, fields });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 2. Get ALL Quote Fields (Admin View)
+app.get('/api/admin/quotes/fields', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const fields = await QuoteField.find().sort({ order: 1 });
+      return res.json({ success: true, fields });
+    }
+    const fields = memoryQuoteFields.sort((a, b) => (a.order || 0) - (b.order || 0));
+    res.json({ success: true, fields });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 3. Create a Quote Field (Admin)
+app.post('/api/admin/quotes/fields', async (req, res) => {
+  try {
+    const { label, type, options, required, placeholder, order, active } = req.body;
+    if (!label) {
+      return res.status(400).json({ success: false, message: 'Field Label is required.' });
+    }
+    const fieldId = `field_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const key = label.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+
+    const newFieldData = {
+      id: fieldId,
+      label,
+      key,
+      type: type || 'text',
+      options: Array.isArray(options) ? options : [],
+      required: Boolean(required),
+      placeholder: placeholder || '',
+      order: Number(order) || 1,
+      active: active !== undefined ? Boolean(active) : true,
+    };
+
+    if (isMongoConnected) {
+      const field = new QuoteField(newFieldData);
+      await field.save();
+      return res.json({ success: true, message: 'Quote field created successfully!', field });
+    }
+
+    memoryQuoteFields.push(newFieldData);
+    res.json({ success: true, message: 'Quote field created successfully!', field: newFieldData });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 4. Update a Quote Field (Admin)
+app.put('/api/admin/quotes/fields/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { label, type, options, required, placeholder, order, active } = req.body;
+
+    if (isMongoConnected) {
+      const field = await QuoteField.findOne({ id });
+      if (!field) return res.status(404).json({ success: false, message: 'Quote field not found.' });
+
+      if (label !== undefined) {
+        field.label = label;
+        field.key = label.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+      }
+      if (type !== undefined) field.type = type;
+      if (options !== undefined) field.options = Array.isArray(options) ? options : [];
+      if (required !== undefined) field.required = Boolean(required);
+      if (placeholder !== undefined) field.placeholder = placeholder;
+      if (order !== undefined) field.order = Number(order);
+      if (active !== undefined) field.active = Boolean(active);
+
+      await field.save();
+      return res.json({ success: true, message: 'Quote field updated successfully!', field });
+    }
+
+    const idx = memoryQuoteFields.findIndex((f) => f.id === id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Quote field not found.' });
+
+    if (label !== undefined) {
+      memoryQuoteFields[idx].label = label;
+      memoryQuoteFields[idx].key = label.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
+    }
+    if (type !== undefined) memoryQuoteFields[idx].type = type;
+    if (options !== undefined) memoryQuoteFields[idx].options = Array.isArray(options) ? options : [];
+    if (required !== undefined) memoryQuoteFields[idx].required = Boolean(required);
+    if (placeholder !== undefined) memoryQuoteFields[idx].placeholder = placeholder;
+    if (order !== undefined) memoryQuoteFields[idx].order = Number(order);
+    if (active !== undefined) memoryQuoteFields[idx].active = Boolean(active);
+
+    res.json({ success: true, message: 'Quote field updated successfully!', field: memoryQuoteFields[idx] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 5. Delete a Quote Field (Admin)
+app.delete('/api/admin/quotes/fields/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      await QuoteField.deleteOne({ id });
+      return res.json({ success: true, message: 'Quote field deleted successfully!' });
+    }
+    memoryQuoteFields = memoryQuoteFields.filter((f) => f.id !== id);
+    res.json({ success: true, message: 'Quote field deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 6. Submit a Quote Request (Website Users)
+app.post('/api/quotes/request', async (req, res) => {
+  try {
+    const { name, phone, email, fieldsData } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, message: 'Name and Contact Number are required.' });
+    }
+
+    const reqId = `qreq_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newReqData = {
+      id: reqId,
+      name,
+      phone,
+      email: email || '',
+      fieldsData: fieldsData || {},
+      status: 'Pending',
+      createdAt: new Date(),
+    };
+
+    if (isMongoConnected) {
+      const qReq = new QuoteRequest(newReqData);
+      await qReq.save();
+      return res.json({ success: true, message: 'Wholesale Quote Request submitted successfully! Our sales team will contact you shortly.', request: qReq });
+    }
+
+    memoryQuoteRequests.unshift(newReqData);
+    res.json({ success: true, message: 'Wholesale Quote Request submitted successfully! Our sales team will contact you shortly.', request: newReqData });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 7. Get ALL Quote Requests (Admin View)
+app.get('/api/admin/quotes/requests', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const requests = await QuoteRequest.find().sort({ createdAt: -1 });
+      return res.json({ success: true, requests });
+    }
+    res.json({ success: true, requests: memoryQuoteRequests });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 8. Update Quote Request Status (Admin)
+app.put('/api/admin/quotes/requests/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ success: false, message: 'Status is required.' });
+
+    if (isMongoConnected) {
+      const qReq = await QuoteRequest.findOne({ id });
+      if (!qReq) return res.status(404).json({ success: false, message: 'Quote Request not found.' });
+      qReq.status = status;
+      await qReq.save();
+      return res.json({ success: true, message: `Status updated to ${status}!`, request: qReq });
+    }
+
+    const reqItem = memoryQuoteRequests.find((r) => r.id === id);
+    if (!reqItem) return res.status(404).json({ success: false, message: 'Quote Request not found.' });
+    reqItem.status = status;
+    res.json({ success: true, message: `Status updated to ${status}!`, request: reqItem });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 9. Delete Quote Request (Admin)
+app.delete('/api/admin/quotes/requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      await QuoteRequest.deleteOne({ id });
+      return res.json({ success: true, message: 'Quote request deleted successfully!' });
+    }
+    memoryQuoteRequests = memoryQuoteRequests.filter((r) => r.id !== id);
+    res.json({ success: true, message: 'Quote request deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Serve static frontend files (Storefront & Admin)

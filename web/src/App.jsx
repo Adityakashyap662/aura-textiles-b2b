@@ -315,6 +315,49 @@ export default function App() {
   const [pdfPreviewCatalog, setPdfPreviewCatalog] = useState(null);
   const [toasts, setToasts] = useState([]);
 
+  // Wholesale Quote Form States
+  const [quoteFields, setQuoteFields] = useState([]);
+  const [quoteFormData, setQuoteFormData] = useState({ name: '', phone: '', email: '' });
+  const [quoteFieldsData, setQuoteFieldsData] = useState({});
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
+
+  useEffect(() => {
+    api.getQuoteFields().then((fields) => {
+      if (fields && Array.isArray(fields) && fields.length > 0) {
+        setQuoteFields(fields);
+      }
+    });
+  }, []);
+
+  const handleQuoteFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!quoteFormData.name.trim() || !quoteFormData.phone.trim()) {
+      showToast('Form Error', 'Please enter your Name and Contact Number.', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmittingQuote(true);
+      const res = await api.submitQuoteRequest({
+        name: quoteFormData.name.trim(),
+        phone: quoteFormData.phone.trim(),
+        email: quoteFormData.email.trim(),
+        fieldsData: quoteFieldsData,
+      });
+
+      if (res.success) {
+        showToast('Quote Request Submitted! 🚀', 'Thank you! Our sales team will contact you shortly.', 'success');
+        setB2bQuoteModalVisible(false);
+        setQuoteFormData({ name: '', phone: '', email: '' });
+        setQuoteFieldsData({});
+      }
+    } catch (err) {
+      showToast('Submission Error', err.message, 'error');
+    } finally {
+      setIsSubmittingQuote(false);
+    }
+  };
+
   // Profile Email Update with OTP State
   const [showUpdateEmailModal, setShowUpdateEmailModal] = useState(false);
   const [newEmailInput, setNewEmailInput] = useState('');
@@ -3299,6 +3342,136 @@ export default function App() {
           © 2026 Aura Textiles B2B Wholesale Export (Noida). All rights reserved.
         </div>
       </footer>
+
+      {/* ── GET WHOLESALE QUOTE POP-UP MODAL ── */}
+      {b2bQuoteModalVisible && (
+        <div className="modal-overlay">
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '520px', padding: '32px', borderRadius: '24px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button
+              onClick={() => setB2bQuoteModalVisible(false)}
+              style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)', border: '1.5px solid #d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
+                <FileText size={26} color="#d4af37" />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: '800', color: '#fff' }}>Get Wholesale Quote</h3>
+              <p style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '4px' }}>
+                Direct factory pricing & custom manufacturing for bulk boutique buyers
+              </p>
+            </div>
+
+            <form onSubmit={handleQuoteFormSubmit}>
+              {/* Name (Required) */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                  Full Name <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="input-dark"
+                  value={quoteFormData.name}
+                  onChange={(e) => setQuoteFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Vikram Mehta"
+                  style={{ padding: '12px', fontSize: '14px' }}
+                />
+              </div>
+
+              {/* Contact Number (Required) */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                  Contact Number <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  className="input-dark"
+                  value={quoteFormData.phone}
+                  onChange={(e) => setQuoteFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                  placeholder="e.g., +91 98200 12345"
+                  style={{ padding: '12px', fontSize: '14px' }}
+                />
+              </div>
+
+              {/* Email ID (Optional) */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
+                  Email ID <span style={{ color: '#64748b', fontWeight: '400' }}>(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  className="input-dark"
+                  value={quoteFormData.email}
+                  onChange={(e) => setQuoteFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  placeholder="e.g., vikram@boutique.com"
+                  style={{ padding: '12px', fontSize: '14px' }}
+                />
+              </div>
+
+              <div style={{ height: '1px', background: 'rgba(212,175,55,0.2)', margin: '20px 0' }} />
+
+              {/* Dynamic Admin-Configured Quote Fields */}
+              {quoteFields.map((field) => (
+                <div key={field.id} style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
+                    {field.label} {field.required && <span style={{ color: '#ef4444' }}>*</span>}
+                  </label>
+
+                  {field.type === 'select' ? (
+                    <select
+                      required={field.required}
+                      className="input-dark"
+                      value={quoteFieldsData[field.key] || ''}
+                      onChange={(e) => setQuoteFieldsData((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                      style={{ padding: '12px', fontSize: '14px', background: '#0b0c10', color: '#fff' }}
+                    >
+                      <option value="">{field.placeholder || `-- Select ${field.label} --`}</option>
+                      {(field.options || []).map((opt, i) => (
+                        <option key={i} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === 'textarea' ? (
+                    <textarea
+                      required={field.required}
+                      rows="3"
+                      className="input-dark"
+                      value={quoteFieldsData[field.key] || ''}
+                      onChange={(e) => setQuoteFieldsData((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder || `Enter ${field.label}`}
+                      style={{ padding: '12px', fontSize: '14px' }}
+                    />
+                  ) : (
+                    <input
+                      type={field.type || 'text'}
+                      required={field.required}
+                      className="input-dark"
+                      value={quoteFieldsData[field.key] || ''}
+                      onChange={(e) => setQuoteFieldsData((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder || `Enter ${field.label}`}
+                      style={{ padding: '12px', fontSize: '14px' }}
+                    />
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="submit"
+                disabled={isSubmittingQuote}
+                className="btn-gold"
+                style={{ width: '100%', padding: '14px', fontWeight: '800', marginTop: '10px', fontSize: '15px' }}
+              >
+                {isSubmittingQuote ? 'Submitting Request...' : 'Get Quote 🚀'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

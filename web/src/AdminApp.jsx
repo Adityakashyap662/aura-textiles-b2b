@@ -15,6 +15,7 @@ import {
   Search,
   Trash2,
   Edit2,
+  Edit3,
   X,
   ChevronRight,
   RefreshCw,
@@ -28,7 +29,8 @@ import {
   Sparkles,
   Building2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  HelpCircle,
 } from 'lucide-react';
 import { api } from './utils/api';
 
@@ -301,8 +303,149 @@ export default function AdminApp() {
   const [showAddBankModal, setShowAddBankModal] = useState(false);
   const [bankForm, setBankForm] = useState({ bankName: '', accountName: '', accountNumber: '', ifsc: '', branch: '' });
 
-  const [showAddUpiModal, setShowAddUpiModal] = useState(false);
-  const [upiForm, setUpiForm] = useState({ upiId: '', displayName: '', qrImage: '' });
+  // Wholesale Quote Management States
+  const [quoteSubTab, setQuoteSubTab] = useState('requests'); // default 'requests'
+  const [quoteRequestsList, setQuoteRequestsList] = useState([]);
+  const [adminQuoteFieldsList, setAdminQuoteFieldsList] = useState([]);
+  const [showFieldModal, setShowFieldModal] = useState(false);
+  const [editingFieldItem, setEditingFieldItem] = useState(null);
+  const [fieldFormData, setFieldFormData] = useState({
+    label: '',
+    type: 'text',
+    options: '',
+    required: false,
+    placeholder: '',
+    order: 1,
+    active: true,
+  });
+
+  const fetchQuoteRequests = useCallback(async () => {
+    try {
+      const data = await api.getQuoteRequests();
+      if (data && Array.isArray(data)) {
+        setQuoteRequestsList(data);
+      }
+    } catch (e) {
+      console.warn('Error fetching quote requests:', e);
+    }
+  }, []);
+
+  const fetchAdminQuoteFields = useCallback(async () => {
+    try {
+      const data = await api.getAdminQuoteFields();
+      if (data && Array.isArray(data)) {
+        setAdminQuoteFieldsList(data);
+      }
+    } catch (e) {
+      console.warn('Error fetching quote fields:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQuoteRequests();
+    fetchAdminQuoteFields();
+  }, [fetchQuoteRequests, fetchAdminQuoteFields]);
+
+  const handleOpenAddFieldModal = () => {
+    setEditingFieldItem(null);
+    setFieldFormData({
+      label: '',
+      type: 'text',
+      options: '',
+      required: false,
+      placeholder: '',
+      order: (adminQuoteFieldsList.length || 0) + 1,
+      active: true,
+    });
+    setShowFieldModal(true);
+  };
+
+  const handleOpenEditFieldModal = (field) => {
+    setEditingFieldItem(field);
+    setFieldFormData({
+      label: field.label || '',
+      type: field.type || 'text',
+      options: Array.isArray(field.options) ? field.options.join(', ') : field.options || '',
+      required: Boolean(field.required),
+      placeholder: field.placeholder || '',
+      order: field.order || 1,
+      active: field.active !== undefined ? Boolean(field.active) : true,
+    });
+    setShowFieldModal(true);
+  };
+
+  const handleSaveQuoteField = async (e) => {
+    e.preventDefault();
+    if (!fieldFormData.label.trim()) {
+      alert('Please enter a Field Label.');
+      return;
+    }
+
+    const optionsArray = fieldFormData.options
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      label: fieldFormData.label.trim(),
+      type: fieldFormData.type,
+      options: optionsArray,
+      required: fieldFormData.required,
+      placeholder: fieldFormData.placeholder.trim(),
+      order: Number(fieldFormData.order) || 1,
+      active: fieldFormData.active,
+    };
+
+    try {
+      if (editingFieldItem) {
+        await api.updateQuoteField(editingFieldItem.id, payload);
+      } else {
+        await api.createQuoteField(payload);
+      }
+      setShowFieldModal(false);
+      fetchAdminQuoteFields();
+    } catch (err) {
+      alert(err.message || 'Error saving quote field');
+    }
+  };
+
+  const handleDeleteQuoteField = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this custom quote field?')) return;
+    try {
+      await api.deleteQuoteField(id);
+      fetchAdminQuoteFields();
+    } catch (err) {
+      alert(err.message || 'Error deleting field');
+    }
+  };
+
+  const handleToggleQuoteFieldActive = async (field) => {
+    try {
+      await api.updateQuoteField(field.id, { active: !field.active });
+      fetchAdminQuoteFields();
+    } catch (err) {
+      alert(err.message || 'Error toggling status');
+    }
+  };
+
+  const handleUpdateQuoteRequestStatus = async (id, status) => {
+    try {
+      await api.updateQuoteRequestStatus(id, status);
+      fetchQuoteRequests();
+    } catch (err) {
+      alert(err.message || 'Error updating status');
+    }
+  };
+
+  const handleDeleteQuoteRequest = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this quotation request?')) return;
+    try {
+      await api.deleteQuoteRequest(id);
+      fetchQuoteRequests();
+    } catch (err) {
+      alert(err.message || 'Error deleting request');
+    }
+  };
 
   // Payment Received Platform Analytics Computation
   const paymentAnalytics = useMemo(() => {
@@ -1437,6 +1580,7 @@ export default function AdminApp() {
             { id: 'dashboard', name: 'Dashboard', icon: <LayoutDashboard size={18} /> },
             { id: 'products', name: 'Product Management', icon: <ShoppingBag size={18} /> },
             { id: 'orders', name: 'Order Management', icon: <Sliders size={18} /> },
+            { id: 'get_quotes', name: 'Get Wholesale Quote', icon: <HelpCircle size={18} /> },
             { id: 'customers', name: 'Customer Management', icon: <Users size={18} /> },
             { id: 'analysis', name: 'Analysis', icon: <PieChart size={18} /> },
             // 1. REPLACED DOLLARSIGN WITH DYNAMIC RUPEE ICON
@@ -1450,6 +1594,7 @@ export default function AdminApp() {
               key={item.id}
               onClick={() => { 
                 setActiveTab(item.id); 
+                if (item.id === 'get_quotes') setQuoteSubTab('requests');
                 setEditingProduct(null); 
                 setEditingCategory(null); 
                 setEditingCustomer(null);
@@ -2563,6 +2708,266 @@ export default function AdminApp() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* GET WHOLESALE QUOTE VIEW */}
+        {activeTab === 'get_quotes' && (
+          <div className="fade-in-up">
+            {/* Section Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <HelpCircle size={24} color="#d4af37" /> Get Wholesale Quote Management
+                </h1>
+                <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
+                  View client quotation requests and configure dynamic custom quote form fields
+                </p>
+              </div>
+
+              {quoteSubTab === 'quotes' && (
+                <button onClick={handleOpenAddFieldModal} className="btn-gold" style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Plus size={16} /> Create Custom Field
+                </button>
+              )}
+            </div>
+
+            {/* 2 Navigation Tabs (Requests & Quotes) */}
+            <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px' }}>
+              <button
+                onClick={() => setQuoteSubTab('requests')}
+                style={{
+                  padding: '12px 20px',
+                  background: quoteSubTab === 'requests' ? 'rgba(212,175,55,0.15)' : 'transparent',
+                  border: 'none',
+                  borderBottom: quoteSubTab === 'requests' ? '3px solid #d4af37' : '3px solid transparent',
+                  color: quoteSubTab === 'requests' ? '#d4af37' : '#94a3b8',
+                  fontWeight: '800',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '8px 8px 0 0',
+                }}
+              >
+                <FileText size={16} /> Request ({quoteRequestsList.length})
+              </button>
+
+              <button
+                onClick={() => setQuoteSubTab('quotes')}
+                style={{
+                  padding: '12px 20px',
+                  background: quoteSubTab === 'quotes' ? 'rgba(212,175,55,0.15)' : 'transparent',
+                  border: 'none',
+                  borderBottom: quoteSubTab === 'quotes' ? '3px solid #d4af37' : '3px solid transparent',
+                  color: quoteSubTab === 'quotes' ? '#d4af37' : '#94a3b8',
+                  fontWeight: '800',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '8px 8px 0 0',
+                }}
+              >
+                <Sliders size={16} /> Quotes ({adminQuoteFieldsList.length})
+              </button>
+            </div>
+
+            {/* TAB 1: REQUESTS (DEFAULT TAB) */}
+            {quoteSubTab === 'requests' && (
+              <div style={{ background: '#0a0a0a', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', color: '#d4af37' }}>
+                      <th style={{ padding: '14px 18px' }}>Request ID / Date</th>
+                      <th style={{ padding: '14px 18px' }}>Client Info</th>
+                      <th style={{ padding: '14px 18px' }}>Contact Phone</th>
+                      <th style={{ padding: '14px 18px' }}>Quotation Details</th>
+                      <th style={{ padding: '14px 18px' }}>Status</th>
+                      <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quoteRequestsList.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                          No quotation requests received yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      quoteRequestsList.map((reqItem) => (
+                        <tr key={reqItem.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '14px 18px', fontWeight: '700', color: '#fff' }}>
+                            <div>{reqItem.id}</div>
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                              {new Date(reqItem.createdAt).toLocaleString()}
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ fontWeight: '700', color: '#fff' }}>{reqItem.name}</div>
+                            {reqItem.email && <div style={{ fontSize: '12px', color: '#94a3b8' }}>{reqItem.email}</div>}
+                          </td>
+                          <td style={{ padding: '14px 18px', fontWeight: '700', color: '#d4af37' }}>
+                            <a href={`tel:${reqItem.phone}`} style={{ color: '#d4af37', textDecoration: 'none' }}>
+                              📞 {reqItem.phone}
+                            </a>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {Object.entries(reqItem.fieldsData || {}).map(([key, val]) => {
+                                const matchedField = adminQuoteFieldsList.find((f) => f.key === key);
+                                const label = matchedField ? matchedField.label : key;
+                                return (
+                                  <div key={key} style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                                    <strong style={{ color: '#94a3b8' }}>{label}:</strong> {String(val)}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <select
+                              value={reqItem.status || 'Pending'}
+                              onChange={(e) => handleUpdateQuoteRequestStatus(reqItem.id, e.target.value)}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '20px',
+                                background:
+                                  reqItem.status === 'Closed'
+                                    ? 'rgba(239,68,68,0.2)'
+                                    : reqItem.status === 'Quoted'
+                                    ? 'rgba(16,185,129,0.2)'
+                                    : reqItem.status === 'In Touch'
+                                    ? 'rgba(59,130,246,0.2)'
+                                    : 'rgba(212,175,55,0.2)',
+                                color:
+                                  reqItem.status === 'Closed'
+                                    ? '#ef4444'
+                                    : reqItem.status === 'Quoted'
+                                    ? '#10b981'
+                                    : reqItem.status === 'In Touch'
+                                    ? '#3b82f6'
+                                    : '#d4af37',
+                                border: '1px solid currentColor',
+                                fontWeight: '700',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <option value="Pending" style={{ background: '#0b0c10', color: '#fff' }}>⏳ Pending</option>
+                              <option value="In Touch" style={{ background: '#0b0c10', color: '#fff' }}>📞 In Touch</option>
+                              <option value="Quoted" style={{ background: '#0b0c10', color: '#fff' }}>💰 Quoted</option>
+                              <option value="Closed" style={{ background: '#0b0c10', color: '#fff' }}>✅ Closed</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => handleDeleteQuoteRequest(reqItem.id)}
+                              style={{ padding: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', cursor: 'pointer' }}
+                              title="Delete Quote Request"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TAB 2: QUOTES (CUSTOM FORM FIELDS SETTINGS) */}
+            {quoteSubTab === 'quotes' && (
+              <div>
+                <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', padding: '14px 18px', borderRadius: '10px', marginBottom: '20px', color: '#cbd5e1', fontSize: '13px' }}>
+                  💡 <strong>Dynamic Form Fields Configurator:</strong> Any custom fields you create, edit, or delete below will automatically appear inside the <strong>"Get Wholesale Quote"</strong> pop-up modal on the live website!
+                </div>
+
+                <div style={{ background: '#0a0a0a', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', color: '#d4af37' }}>
+                        <th style={{ padding: '14px 18px' }}>Order</th>
+                        <th style={{ padding: '14px 18px' }}>Field Label</th>
+                        <th style={{ padding: '14px 18px' }}>Input Type</th>
+                        <th style={{ padding: '14px 18px' }}>Select Options (If Applicable)</th>
+                        <th style={{ padding: '14px 18px' }}>Required?</th>
+                        <th style={{ padding: '14px 18px' }}>Status</th>
+                        <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminQuoteFieldsList.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                            No custom form fields created yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        adminQuoteFieldsList.map((field) => (
+                          <tr key={field.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '14px 18px', fontWeight: '800', color: '#d4af37' }}>#{field.order || 1}</td>
+                            <td style={{ padding: '14px 18px', fontWeight: '700', color: '#fff' }}>
+                              {field.label}
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>key: {field.key}</div>
+                            </td>
+                            <td style={{ padding: '14px 18px', textTransform: 'capitalize', color: '#cbd5e1' }}>{field.type}</td>
+                            <td style={{ padding: '14px 18px', color: '#94a3b8', fontSize: '12px' }}>
+                              {(field.options || []).join(', ') || '—'}
+                            </td>
+                            <td style={{ padding: '14px 18px' }}>
+                              {field.required ? (
+                                <span style={{ color: '#ef4444', fontWeight: '700' }}>Yes (Required)</span>
+                              ) : (
+                                <span style={{ color: '#64748b' }}>No (Optional)</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '14px 18px' }}>
+                              <button
+                                onClick={() => handleToggleQuoteFieldActive(field)}
+                                style={{
+                                  padding: '4px 12px',
+                                  borderRadius: '12px',
+                                  background: field.active ? 'rgba(16,185,129,0.2)' : 'rgba(100,116,139,0.2)',
+                                  color: field.active ? '#10b981' : '#64748b',
+                                  border: '1px solid currentColor',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {field.active ? 'Active' : 'Disabled'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                <button
+                                  onClick={() => handleOpenEditFieldModal(field)}
+                                  style={{ padding: '8px', background: 'rgba(212,175,55,0.15)', border: '1px solid #d4af37', color: '#d4af37', borderRadius: '8px', cursor: 'pointer' }}
+                                  title="Edit Field"
+                                >
+                                  <Edit3 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteQuoteField(field.id)}
+                                  style={{ padding: '8px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', cursor: 'pointer' }}
+                                  title="Delete Field"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -4143,6 +4548,112 @@ export default function AdminApp() {
                   🚪 Yes, Log Out
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CREATE / EDIT CUSTOM QUOTE FIELD MODAL ── */}
+        {showFieldModal && (
+          <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '32px', borderRadius: '24px', position: 'relative', background: '#0b0c10', border: '1.5px solid #d4af37' }}>
+              <button
+                onClick={() => setShowFieldModal(false)}
+                style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: '800', color: '#fff', marginBottom: '20px' }}>
+                {editingFieldItem ? 'Edit Custom Quote Field' : 'Create Custom Quote Field'}
+              </h3>
+
+              <form onSubmit={handleSaveQuoteField}>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Field Label (e.g. Fabric, Quantity, Colour)</label>
+                  <input
+                    type="text"
+                    required
+                    className="input-dark"
+                    value={fieldFormData.label}
+                    onChange={(e) => setFieldFormData((prev) => ({ ...prev, label: e.target.value }))}
+                    placeholder="e.g., Fabric"
+                    style={{ padding: '12px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Input Type</label>
+                  <select
+                    className="input-dark"
+                    value={fieldFormData.type}
+                    onChange={(e) => setFieldFormData((prev) => ({ ...prev, type: e.target.value }))}
+                    style={{ padding: '12px', fontSize: '14px', background: '#0b0c10', color: '#fff' }}
+                  >
+                    <option value="text">Text Input (Short Single Line)</option>
+                    <option value="number">Number Input (Quantity, Count)</option>
+                    <option value="select">Dropdown Select Options</option>
+                    <option value="textarea">Textarea (Multi-line Instructions)</option>
+                  </select>
+                </div>
+
+                {fieldFormData.type === 'select' && (
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>
+                      Dropdown Select Options <span style={{ color: '#94a3b8', fontWeight: '400' }}>(Comma separated)</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="input-dark"
+                      value={fieldFormData.options}
+                      onChange={(e) => setFieldFormData((prev) => ({ ...prev, options: e.target.value }))}
+                      placeholder="e.g. 100% Cotton, Polyester Blend, Heavy Linen"
+                      style={{ padding: '12px', fontSize: '14px' }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Placeholder Hint</label>
+                  <input
+                    type="text"
+                    className="input-dark"
+                    value={fieldFormData.placeholder}
+                    onChange={(e) => setFieldFormData((prev) => ({ ...prev, placeholder: e.target.value }))}
+                    placeholder="e.g. Select your required fabric type"
+                    style={{ padding: '12px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Display Order</label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="input-dark"
+                      value={fieldFormData.order}
+                      onChange={(e) => setFieldFormData((prev) => ({ ...prev, order: e.target.value }))}
+                      style={{ padding: '12px', fontSize: '14px' }}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingTop: '20px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={fieldFormData.required}
+                        onChange={(e) => setFieldFormData((prev) => ({ ...prev, required: e.target.checked }))}
+                      />
+                      Required Field?
+                    </label>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-gold" style={{ width: '100%', padding: '14px', fontWeight: '800' }}>
+                  {editingFieldItem ? 'Save Field Changes' : 'Create Custom Field 🚀'}
+                </button>
+              </form>
             </div>
           </div>
         )}
