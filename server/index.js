@@ -980,6 +980,9 @@ app.post('/api/content/:key', async (req, res) => {
   }
   memoryContent[key] = data;
 
+  res.json({ success: true, message: `Content for ${key} updated successfully!`, key, data });
+});
+
 // ── GET WHOLESALE QUOTE API ENDPOINTS ──
 
 // 1. Get active Quote Fields (Public for Website Form)
