@@ -455,10 +455,14 @@ export default function App() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // General Screen & Category Navigation Handler (Clears search)
+  // General Screen & Category Navigation Handler (Clears search & resets filters)
   const handleNav = (screen, category = 'all') => {
     setSearchQuery('');
     setPlpCategory(category);
+    setPlpFabricFilter('all');
+    setPlpPriceFilter('all');
+    setPlpSinglesOnly(false);
+    setPlpSortOption('featured');
     setCurrentScreen(screen);
     setUserDropdownOpen(false);
     setMobileMenuOpen(false);
