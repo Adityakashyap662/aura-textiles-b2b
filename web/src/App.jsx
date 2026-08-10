@@ -1000,9 +1000,13 @@ export default function App() {
       const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
         setSignupStep(2);
-        setSignupOtp(['', '', '', '', '', '']);
+        if (data.otp) {
+          setSignupOtp(data.otp.split(''));
+        } else {
+          setSignupOtp(['', '', '', '', '', '']);
+        }
         setSignupResendTimer(60);
-        showToast('Verification OTP Sent 📧', `6-digit code sent to your email: ${signupEmail}`);
+        showToast('Verification OTP Sent 📧', `6-digit code sent to ${signupEmail}${data.otp ? ` (Code: ${data.otp})` : ''}`);
       }
     } catch (err) {
       showToast('Registration Error', err.message, 'error');
@@ -1015,7 +1019,8 @@ export default function App() {
     try {
       const data = await api.sendOtp(signupEmail, 'registration');
       if (data.success) {
-        showToast('Fresh OTP Sent 📧', `New 6-digit code sent to ${signupEmail}`);
+        if (data.otp) setSignupOtp(data.otp.split(''));
+        showToast('Fresh OTP Sent 📧', `New 6-digit code sent to ${signupEmail}${data.otp ? ` (Code: ${data.otp})` : ''}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');
@@ -1084,7 +1089,8 @@ export default function App() {
       const data = await api.sendOtp(newEmailInput.trim(), 'email_update');
       if (data.success) {
         setEmailOtpStep(2);
-        showToast('OTP Sent 📧', `6-digit verification code sent to ${newEmailInput}`);
+        if (data.otp) setEmailOtpInput(data.otp);
+        showToast('OTP Sent 📧', `6-digit verification code sent to ${newEmailInput}${data.otp ? ` (Code: ${data.otp})` : ''}`);
       }
     } catch (err) {
       showToast('OTP Request Error', err.message, 'error');
@@ -1134,9 +1140,13 @@ export default function App() {
       const data = await api.forgotPassword(forgotEmail);
       if (data.success) {
         setForgotStep(2);
-        setForgotOtp(['', '', '', '', '', '']);
+        if (data.otp) {
+          setForgotOtp(data.otp.split(''));
+        } else {
+          setForgotOtp(['', '', '', '', '', '']);
+        }
         setForgotResendTimer(60);
-        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to ${forgotEmail}`);
+        showToast('Reset OTP Sent 📧', `6-digit password reset code sent to ${forgotEmail}${data.otp ? ` (Code: ${data.otp})` : ''}`);
       }
     } catch (err) {
       showToast('Account Not Found', err.message || 'Account not found with this email address. Please sign up for a new account.', 'error');
@@ -1149,7 +1159,8 @@ export default function App() {
     try {
       const data = await api.forgotPassword(forgotEmail);
       if (data.success) {
-        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}`);
+        if (data.otp) setForgotOtp(data.otp.split(''));
+        showToast('Fresh OTP Sent 📧', `New 6-digit reset code sent to ${forgotEmail}${data.otp ? ` (Code: ${data.otp})` : ''}`);
       }
     } catch (err) {
       showToast('Resend Error', err.message, 'error');

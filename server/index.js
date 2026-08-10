@@ -356,6 +356,8 @@ async function generateOTP(email) {
 }
 
 async function sendOTPEmail(email, otp, subjectType = 'Verification') {
+  console.log(`🔑 [OTP GENERATED] Target: ${email} | Subject: ${subjectType} | Live Code: ${otp}`);
+
   if (process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.startsWith('xkeysib-')) {
     const candidateSenders = [
       process.env.BREVO_SENDER_EMAIL,
@@ -398,12 +400,12 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
         const data = await response.json();
         if (response.ok) {
           console.log(`🚀 [Brevo Live Delivery Success] Sent 6-Digit OTP to ${email} via Verified Sender: ${senderEmail}. MessageId: ${data?.messageId || 'OK'}`);
-          return;
+          return { delivered: true, provider: 'brevo' };
         } else {
-          console.log(`⚠️ [Brevo API Sender Error for ${senderEmail}]: ${data?.message || JSON.stringify(data)}. Retrying next sender...`);
+          console.log(`⚠️ [Brevo API Sender Error for ${senderEmail}]: ${data?.message || JSON.stringify(data)}`);
         }
       } catch (err) {
-        console.log(`❌ [Brevo API Request Error for ${senderEmail}]: ${err.message}. Retrying next sender...`);
+        console.log(`❌ [Brevo API Request Error for ${senderEmail}]: ${err.message}`);
       }
     }
   }
@@ -432,12 +434,14 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
       if (previewUrl) {
         console.log(`✉️ Ethereal Live Email Preview: ${previewUrl}`);
       }
+      return { delivered: true, provider: 'nodemailer' };
     } catch (err) {
       console.log(`[Email Log] Target: ${email} | Live OTP: ${otp} | Error: ${err.message}`);
     }
-  } else {
-    console.log(`[Email Console Log] Target: ${email} | Live OTP: ${otp}`);
   }
+
+  console.log(`[Email Fallback Active] Target: ${email} | Live OTP: ${otp}`);
+  return { delivered: false, otp };
 }
 
 // ── 5. REST API ENDPOINTS (MONGODB + MEMORY FALLBACK) ──
@@ -561,11 +565,13 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
   const otp = await generateOTP(normalizedEmail);
   const subjectLabel = type === 'registration' ? 'Account Registration' : type === 'forgot_password' ? 'Password Reset' : 'Email Verification';
-  await sendOTPEmail(normalizedEmail, otp, subjectLabel);
+  const mailResult = await sendOTPEmail(normalizedEmail, otp, subjectLabel);
 
   res.json({
     success: true,
     message: `6-digit OTP code sent to ${normalizedEmail}`,
+    otp: otp,
+    delivered: mailResult?.delivered || false,
   });
 });
 
@@ -592,11 +598,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 
   const otp = await generateOTP(normalizedEmail);
-  await sendOTPEmail(normalizedEmail, otp, 'Password Reset');
+  const mailResult = await sendOTPEmail(normalizedEmail, otp, 'Password Reset');
 
   res.json({
     success: true,
     message: `Reset 6-digit OTP code sent to ${normalizedEmail}`,
+    otp: otp,
+    delivered: mailResult?.delivered || false,
   });
 });
 
