@@ -2,8 +2,7 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location) {
     const origin = window.location.origin;
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      if (origin.includes('5173')) return '/api';
-      return `${origin}/api`;
+      return 'http://localhost:5050/api';
     }
     return `${origin}/api`;
   }

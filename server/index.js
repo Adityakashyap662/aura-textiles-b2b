@@ -10,7 +10,7 @@ const { User, Catalog, Order, Otp, QuoteField, QuoteRequest, Category } = requir
 const { defaultQuoteFields, defaultQuoteRequests, categories: initialCategoriesSeed } = require('./memoryDb');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5050;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aura_textiles_b2b';
 
 app.use(cors());
@@ -1306,7 +1306,7 @@ app.get('*', (req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const serverInstance = app.listen(PORT, () => {
   console.log(`=================================================`);
   console.log(`🚀 Aura Textiles B2B Node.js API Server Running`);
   console.log(`🌐 Host Address: http://localhost:${PORT}`);
@@ -1314,4 +1314,14 @@ app.listen(PORT, () => {
   console.log(`✉️ Nodemailer Real OTP Engine: Active`);
   console.log(`💱 Real-Time Global Currency Converter: Active`);
   console.log(`=================================================`);
+});
+
+serverInstance.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const ALT_PORT = Number(PORT) === 5050 ? 3000 : 5050;
+    console.log(`[Port Warning] Port ${PORT} busy, starting on alternate port ${ALT_PORT}...`);
+    app.listen(ALT_PORT, () => {
+      console.log(`🚀 Aura Textiles B2B Server Running on Alternate Port http://localhost:${ALT_PORT}`);
+    });
+  }
 });
