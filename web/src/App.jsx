@@ -691,6 +691,170 @@ export default function App() {
     return generateWhatsAppMessageObj(catalog).link;
   };
 
+  // Reusable Rich Wholesale Catalog Card Renderer (Identical across Home, PLP & Wishlist)
+  const renderCatalogCard = (catalog) => {
+    const isWishlisted = wishlist.includes(catalog.id);
+    const setPrice = (catalog.pricePerPiece || catalog.price || 0) * (catalog.pcsInSet || 6);
+
+    return (
+      <div key={catalog.id} className="catalog-card">
+        <div onClick={() => handleSelectCatalog(catalog.id)} style={{ position: 'relative', height: '320px', cursor: 'pointer' }}>
+          <img src={catalog.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'} alt={catalog.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          
+          <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span className="badge-pcs">{catalog.pcsInSet || 6} Pcs Set</span>
+            {catalog.discount > 0 && (
+              <span className="badge-pcs" style={{ background: '#e94560' }}>{catalog.discount}% OFF</span>
+            )}
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleWishlist(catalog.id);
+            }}
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              background: 'rgba(11, 12, 16, 0.75)',
+              backdropFilter: 'blur(6px)',
+              border: isWishlisted ? '1px solid #e94560' : '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 5,
+            }}
+          >
+            <Heart size={18} color={isWishlisted ? '#e94560' : '#fff'} fill={isWishlisted ? '#e94560' : 'none'} />
+          </button>
+
+          <div style={{ position: 'absolute', bottom: '12px', left: '12px', right: '12px', display: 'flex', gap: '8px' }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelectCatalog(catalog.id);
+              }}
+              style={{
+                flex: 1,
+                background: 'rgba(11, 12, 16, 0.85)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+                color: '#fff',
+                borderRadius: '6px',
+                padding: '8px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+              }}
+            >
+              <Eye size={14} /> View Details
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setPdfPreviewCatalog(catalog);
+              }}
+              style={{
+                background: 'rgba(212, 175, 55, 0.2)',
+                border: '1px solid #d4af37',
+                color: '#d4af37',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <FileText size={14} /> PDF
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', textTransform: 'uppercase' }}>
+              {catalog.brand || 'Aura Weaves'} • SKU: {catalog.sku || `AUR-PROD-${catalog.id}`}
+            </div>
+            <h4
+              onClick={() => handleSelectCatalog(catalog.id)}
+              className="catalog-card-title"
+              style={{ cursor: 'pointer' }}
+            >
+              {catalog.title}
+            </h4>
+
+            <div className="catalog-card-fabric" style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px', marginBottom: '12px' }}>
+              Fabric: <span style={{ color: '#cbd5e1' }}>{catalog.fabric || 'Pure Export Quality Silk'}</span>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '8px', padding: '10px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase' }}>Price Per Piece</div>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: '#d4af37' }}>
+                {formatPrice(catalog.pricePerPiece || catalog.price || 0, activeCurrency)}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase' }}>Full Set ({catalog.pcsInSet || 6} Pcs)</div>
+              <div style={{ fontSize: '15px', fontWeight: '700', color: '#10b981' }}>
+                {formatPrice(setPrice, activeCurrency)}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px' }}>
+            <button
+              onClick={() => handleAddToCart(catalog, 'full_set')}
+              className="btn-gold"
+              style={{
+                padding: '8px 12px',
+                fontSize: '12px',
+                background: isInCart(catalog.id, 'full_set')
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : undefined,
+              }}
+            >
+              {isInCart(catalog.id, 'full_set') ? (
+                <>
+                  <Check size={14} /> Added in Cart ✓
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={14} /> Buy Full Set
+                </>
+              )}
+            </button>
+
+            <a
+              href={generateWhatsAppLink(catalog)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-whatsapp"
+              style={{ padding: '8px 12px', fontSize: '12px' }}
+            >
+              <MessageCircle size={16} />
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleCheckoutWhatsApp = async () => {
     if (!currentUser) {
       showToast('Login Required 🔐', 'Please log in to place your wholesale order.', 'error');
@@ -1854,44 +2018,7 @@ export default function App() {
       {currentScreen === 'plp' && (
         <main style={{ maxWidth: '1280px', margin: '30px auto', padding: '0 20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-            {filteredCatalogs.map((catalog) => (
-              <div key={catalog.id} className="catalog-card">
-                <div onClick={() => handleSelectCatalog(catalog.id)} style={{ position: 'relative', height: '320px', cursor: 'pointer' }}>
-                  <img src={catalog.images[0]} alt={catalog.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
-                    <span className="badge-pcs">{catalog.pcsInSet} Pcs Set</span>
-                  </div>
-                </div>
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700' }}>{catalog.brand}</div>
-                    <h4 onClick={() => handleSelectCatalog(catalog.id)} className="catalog-card-title">
-                      {catalog.title}
-                    </h4>
-                  </div>
-                  <button
-                    onClick={() => handleAddToCart(catalog, 'full_set')}
-                    className="btn-gold"
-                    style={{
-                      width: '100%',
-                      fontSize: '13px',
-                      padding: '10px',
-                      background: isInCart(catalog.id, 'full_set') ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : undefined,
-                    }}
-                  >
-                    {isInCart(catalog.id, 'full_set') ? (
-                      <>
-                        <Check size={16} /> Added in Cart ✓
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} /> Buy Full Set Catalog
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
+            {filteredCatalogs.map((catalog) => renderCatalogCard(catalog))}
           </div>
         </main>
       )}
@@ -1922,73 +2049,7 @@ export default function App() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-              {wishlistCatalogs.map((catalog) => (
-                <div key={catalog.id} className="catalog-card">
-                  <div onClick={() => handleSelectCatalog(catalog.id)} style={{ position: 'relative', height: '320px', cursor: 'pointer' }}>
-                    <img src={catalog.images[0]} alt={catalog.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
-                      <span className="badge-pcs">{catalog.pcsInSet} Pcs Set</span>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleWishlist(catalog.id);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        top: '12px',
-                        right: '12px',
-                        background: 'rgba(11,12,16,0.85)',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                      }}
-                      title="Remove from Wishlist"
-                    >
-                      <Heart size={18} color="#e94560" fill="#e94560" />
-                    </button>
-                  </div>
-                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700' }}>{catalog.brand}</div>
-                      <h4 onClick={() => handleSelectCatalog(catalog.id)} className="catalog-card-title">
-                        {catalog.title}
-                      </h4>
-                      <div className="catalog-card-fabric">Fabric: {catalog.fabric}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '16px', fontWeight: '800', color: '#d4af37', marginBottom: '10px' }}>
-                        {formatPrice(catalog.pricePerPiece * catalog.pcsInSet, activeCurrency)} (Full Set)
-                      </div>
-                      <button
-                        onClick={() => handleAddToCart(catalog, 'full_set')}
-                        className="btn-gold"
-                        style={{
-                          width: '100%',
-                          fontSize: '13px',
-                          padding: '10px',
-                          background: isInCart(catalog.id, 'full_set') ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : undefined,
-                        }}
-                      >
-                        {isInCart(catalog.id, 'full_set') ? (
-                          <>
-                            <Check size={16} /> Added in Cart ✓
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingBag size={14} /> Buy Full Set Catalog
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {wishlistCatalogs.map((catalog) => renderCatalogCard(catalog))}
             </div>
           )}
         </main>
