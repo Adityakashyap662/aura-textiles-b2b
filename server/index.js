@@ -6,8 +6,8 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { BrevoClient } = require('@getbrevo/brevo');
 const mongoose = require('mongoose');
-const { User, Catalog, Order, Otp, QuoteField, QuoteRequest } = require('./models');
-const { defaultQuoteFields, defaultQuoteRequests } = require('./memoryDb');
+const { User, Catalog, Order, Otp, QuoteField, QuoteRequest, Category } = require('./models');
+const { defaultQuoteFields, defaultQuoteRequests, categories: initialCategoriesSeed } = require('./memoryDb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -274,6 +274,7 @@ let memoryOrders = [...initialOrdersSeed];
 let memoryCatalogs = [...initialCatalogsSeed];
 let memoryQuoteFields = [...defaultQuoteFields];
 let memoryQuoteRequests = [...defaultQuoteRequests];
+let memoryCategories = [...(initialCategoriesSeed || [])];
 const memoryOtpStore = new Map();
 
 // ── 2. EMAIL TRANSPORTER INITIALIZATION (BREVO / HOSTINGER / GMAIL / ETHEREAL) ──
@@ -803,62 +804,161 @@ app.get('/api/catalogs', async (req, res) => {
 });
 
 app.post('/api/catalogs', async (req, res) => {
-  const catalogData = req.body;
-  const newCatalog = {
-    id: `cat_${Date.now()}`,
-    sku: catalogData.sku || `AUR-PROD-${Math.floor(1000 + Math.random() * 9000)}`,
-    title: catalogData.title,
-    category: catalogData.category || 'sarees',
-    brand: catalogData.brand || 'Aura Weaves Noida',
-    pcsInSet: Number(catalogData.pcsInSet) || 6,
-    pricePerPiece: Number(catalogData.pricePerPiece) || 950,
-    singlesAvailable: Boolean(catalogData.singlesAvailable),
-    singlesPrice: Number(catalogData.singlesPrice) || 1050,
-    fabric: catalogData.fabric || 'Pure Export Quality Silk',
-    work: catalogData.work || 'Handcrafted Zari & Resham Embroidery',
-    length: catalogData.length || '5.5 Mtr + Blouse Piece',
-    catalogWeight: catalogData.catalogWeight || '5.0 KG',
-    rating: 5.0,
-    reviewsCount: 1,
-    images: catalogData.images && catalogData.images.length > 0
-      ? catalogData.images
-      : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
-  };
+  try {
+    const catalogData = req.body;
+    const basePrice = Number(catalogData.price || catalogData.pricePerPiece) || 850;
+    const newCatalog = {
+      id: catalogData.id || `cat_${Date.now()}`,
+      sku: catalogData.sku || `AUR-PROD-${Math.floor(1000 + Math.random() * 9000)}`,
+      title: catalogData.title || 'New Wholesale Catalog',
+      brand: catalogData.brand || 'Aura Weaves Noida',
+      description: catalogData.description || 'Export quality wholesale apparel',
+      category: catalogData.category || 'sarees',
+      tags: catalogData.tags || ['new-arrival'],
+      careInstructions: catalogData.careInstructions || 'Dry clean only',
+      highlights: catalogData.highlights || '100% export quality weave',
+      price: basePrice,
+      pricePerPiece: basePrice,
+      mrp: Number(catalogData.mrp) || Math.round(basePrice * 1.5),
+      discount: Number(catalogData.discount) || 30,
+      pcsInSet: Number(catalogData.pcsInSet) || 6,
+      singlesAvailable: Boolean(catalogData.singlesAvailable),
+      singlesPrice: Number(catalogData.singlesPrice) || basePrice + 100,
+      fabric: catalogData.fabric || 'Pure Export Quality Silk',
+      work: catalogData.work || 'Handcrafted Zari & Resham Embroidery',
+      length: catalogData.length || '5.5 Mtr + Blouse Piece',
+      catalogWeight: catalogData.catalogWeight || '5.0 KG',
+      rating: 5.0,
+      reviewsCount: 1,
+      images: catalogData.images && catalogData.images.length > 0
+        ? catalogData.images
+        : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
+      videos: catalogData.videos || [],
+      colors: catalogData.colors || [],
+      sizes: catalogData.sizes || [{ size: 'Free Size', stock: 10 }],
+    };
 
-  if (isMongoConnected) {
-    await Catalog.create(newCatalog);
-  } else {
-    memoryCatalogs.unshift(newCatalog);
+    if (isMongoConnected) {
+      await Catalog.create(newCatalog);
+    } else {
+      memoryCatalogs.unshift(newCatalog);
+    }
+
+    res.json({ success: true, message: 'New wholesale catalog added successfully!', catalog: newCatalog });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-
-  res.json({ success: true, message: 'New wholesale catalog added successfully!', catalog: newCatalog });
 });
 
 app.put('/api/catalogs/:id', async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  if (isMongoConnected) {
-    const updated = await Catalog.findOneAndUpdate({ id }, req.body, { new: true }).lean();
-    if (!updated) return res.status(404).json({ success: false, message: 'Catalog not found.' });
-    return res.json({ success: true, message: 'Wholesale catalog updated successfully!', catalog: updated });
-  } else {
-    const index = memoryCatalogs.findIndex((c) => c.id === id);
-    if (index === -1) return res.status(404).json({ success: false, message: 'Catalog not found.' });
-    memoryCatalogs[index] = { ...memoryCatalogs[index], ...req.body };
-    return res.json({ success: true, message: 'Wholesale catalog updated successfully!', catalog: memoryCatalogs[index] });
+    if (isMongoConnected) {
+      const updated = await Catalog.findOneAndUpdate({ id }, req.body, { new: true }).lean();
+      if (!updated) return res.status(404).json({ success: false, message: 'Catalog not found.' });
+      return res.json({ success: true, message: 'Wholesale catalog updated successfully!', catalog: updated });
+    } else {
+      const index = memoryCatalogs.findIndex((c) => c.id === id);
+      if (index === -1) return res.status(404).json({ success: false, message: 'Catalog not found.' });
+      memoryCatalogs[index] = { ...memoryCatalogs[index], ...req.body };
+      return res.json({ success: true, message: 'Wholesale catalog updated successfully!', catalog: memoryCatalogs[index] });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
 app.delete('/api/catalogs/:id', async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  if (isMongoConnected) {
-    await Catalog.deleteOne({ id });
-  } else {
-    memoryCatalogs = memoryCatalogs.filter((c) => c.id !== id);
+    if (isMongoConnected) {
+      await Catalog.deleteOne({ id });
+    } else {
+      memoryCatalogs = memoryCatalogs.filter((c) => c.id !== id);
+    }
+    res.json({ success: true, message: `Catalog ${id} deleted successfully.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
+});
 
-  res.json({ success: true, message: 'Catalog deleted successfully!' });
+// ── CATEGORIES API ENDPOINTS ──
+app.get('/api/categories', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const categories = await Category.find().sort({ createdAt: -1 });
+      return res.json({ success: true, categories });
+    }
+    res.json({ success: true, categories: memoryCategories });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/categories', async (req, res) => {
+  try {
+    const { id, name, icon, badge, subcategories } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Category Name is required.' });
+    }
+
+    const catId = id || name.toLowerCase().replace(/\s+/g, '_');
+    const newCategory = {
+      id: catId,
+      name,
+      icon: icon || 'shirt',
+      badge: badge || '',
+      itemCount: 0,
+      subcategories: subcategories || [],
+    };
+
+    if (isMongoConnected) {
+      await Category.findOneAndUpdate({ id: catId }, newCategory, { upsert: true, new: true });
+    } else {
+      const idx = memoryCategories.findIndex((c) => c.id === catId);
+      if (idx !== -1) memoryCategories[idx] = newCategory;
+      else memoryCategories.push(newCategory);
+    }
+
+    res.json({ success: true, message: 'Category saved successfully!', category: newCategory });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (isMongoConnected) {
+      const updated = await Category.findOneAndUpdate({ id }, updateData, { new: true });
+      return res.json({ success: true, message: 'Category updated successfully!', category: updated });
+    }
+
+    const idx = memoryCategories.findIndex((c) => c.id === id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Category not found.' });
+    memoryCategories[idx] = { ...memoryCategories[idx], ...updateData };
+    res.json({ success: true, message: 'Category updated successfully!', category: memoryCategories[idx] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      await Category.deleteOne({ id });
+    } else {
+      memoryCategories = memoryCategories.filter((c) => c.id !== id);
+    }
+    res.json({ success: true, message: `Category ${id} deleted successfully.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // D. Orders & Admin Stats APIs

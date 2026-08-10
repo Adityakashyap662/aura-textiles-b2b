@@ -112,6 +112,25 @@ const QuoteRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── 8. CATEGORY SCHEMA ──
+const SubcategorySchema = new mongoose.Schema({
+  id: String,
+  name: String,
+  icon: { type: String, default: 'shirt' },
+});
+
+const CategorySchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    icon: { type: String, default: 'shirt' },
+    badge: { type: String, default: '' },
+    itemCount: { type: Number, default: 0 },
+    subcategories: [SubcategorySchema],
+  },
+  { timestamps: true }
+);
+
 const User = mongoose.model('User', UserSchema);
 const Catalog = mongoose.model('Catalog', CatalogSchema);
 const Order = mongoose.model('Order', OrderSchema);
@@ -119,6 +138,7 @@ const Otp = mongoose.model('Otp', OtpSchema);
 const Content = mongoose.model('Content', ContentSchema);
 const QuoteField = mongoose.model('QuoteField', QuoteFieldSchema);
 const QuoteRequest = mongoose.model('QuoteRequest', QuoteRequestSchema);
+const Category = mongoose.model('Category', CategorySchema);
 
 module.exports = {
   User,
@@ -128,4 +148,5 @@ module.exports = {
   Content,
   QuoteField,
   QuoteRequest,
+  Category,
 };

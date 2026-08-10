@@ -663,6 +663,7 @@ export default function AdminApp() {
       const stats = await api.getAdminStats();
       const prods = await api.getCatalogs('INR');
       const ords = await api.getOrders();
+      const cats = await api.getCategories();
 
       if (ords && ords.length > 0) {
         setOrdersList(ords);
@@ -675,6 +676,9 @@ export default function AdminApp() {
       }
       if (prods && prods.length > 0) {
         setProductsList(prods);
+      }
+      if (cats && cats.length > 0) {
+        setCategoriesList(cats);
       }
     } catch (e) {
       console.warn('API: Background sync failure', e);

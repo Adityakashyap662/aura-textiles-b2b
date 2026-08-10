@@ -156,6 +156,49 @@ export const api = {
     return data;
   },
 
+  // Category APIs
+  getCategories: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/categories`);
+      const data = await res.json();
+      return data.categories || [];
+    } catch (e) {
+      console.warn('API Fetch Categories Error:', e);
+      return [];
+    }
+  },
+
+  createCategory: async (categoryData) => {
+    const res = await fetch(`${BASE_URL}/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(categoryData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Create category failed');
+    return data.category || data;
+  },
+
+  updateCategory: async (id, categoryData) => {
+    const res = await fetch(`${BASE_URL}/categories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(categoryData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Update category failed');
+    return data.category || data;
+  },
+
+  deleteCategory: async (id) => {
+    const res = await fetch(`${BASE_URL}/categories/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Delete category failed');
+    return data;
+  },
+
   // Admin Stats & Orders
   getAdminStats: async () => {
     try {
