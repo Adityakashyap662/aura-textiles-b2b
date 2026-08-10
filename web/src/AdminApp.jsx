@@ -558,6 +558,7 @@ export default function AdminApp() {
     category: 'men', tags: [], careInstructions: '', highlights: '', images: [], videos: [], colors: [], sizes: []
   });
   const [productSearch, setProductSearch] = useState('');
+  const [adminCategoryFilter, setAdminCategoryFilter] = useState('all');
 
   // Category CRUD Form States
   const [editingCategory, setEditingCategory] = useState(null); // null = list, false = add, categoryObj = edit
@@ -1879,6 +1880,36 @@ export default function AdminApp() {
                           onChange={(e) => setProductSearch(e.target.value)}
                         />
                       </div>
+
+                      {/* Category Interlinked Filter Dropdown */}
+                      <select
+                        value={adminCategoryFilter}
+                        onChange={(e) => setAdminCategoryFilter(e.target.value)}
+                        style={{
+                          height: '50px',
+                          padding: '0 16px',
+                          background: '#000',
+                          border: '1px solid rgba(212,175,55,0.25)',
+                          color: '#d4af37',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          maxWidth: '220px',
+                        }}
+                      >
+                        <option value="all" style={{ background: '#0b0c10', color: '#fff' }}>
+                          📂 All Departments ({productsList.length})
+                        </option>
+                        {categoriesList.map((cat) => {
+                          const count = productsList.filter((p) => p.category === cat.id || p.category === cat.name).length;
+                          return (
+                            <option key={cat.id} value={cat.id} style={{ background: '#0b0c10', color: '#fff' }}>
+                              {cat.name} ({count})
+                            </option>
+                          );
+                        })}
+                      </select>
                       <button
                         onClick={() => {
                           setEditingProduct(false);
@@ -1935,8 +1966,11 @@ export default function AdminApp() {
                             const filtered = productsList.filter(p => {
                               const title = (p.title || '').toLowerCase();
                               const brand = (p.brand || '').toLowerCase();
+                              const cat = (p.category || '').toLowerCase();
                               const query = productSearch.toLowerCase();
-                              return title.includes(query) || brand.includes(query);
+                              const matchesQuery = !query || title.includes(query) || brand.includes(query) || cat.includes(query);
+                              const matchesCat = adminCategoryFilter === 'all' || p.category === adminCategoryFilter;
+                              return matchesQuery && matchesCat;
                             });
                             
                             const totalItems = filtered.length;
@@ -2440,8 +2474,20 @@ export default function AdminApp() {
                           <img src={c.image || 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=200&auto=format&fit=crop&q=80'} style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(212,175,55,0.2)', flexShrink: 0 }} alt="" />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: '900', fontSize: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>ID: <span style={{ fontFamily: 'monospace' }}>{c.id}</span></div>
-                            <div style={{ fontSize: '11.5px', color: '#D4AF37', marginTop: '4px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                              <span 
+                                onClick={() => {
+                                  setProductSubTab('items');
+                                  setAdminCategoryFilter(c.id);
+                                }}
+                                className="badge-pcs" 
+                                style={{ fontSize: '10.5px', padding: '3px 10px', background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37', cursor: 'pointer' }}
+                              >
+                                📦 {productsList.filter(p => p.category === c.id || p.category === c.name).length} Interlinked Products
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>ID: {c.id}</span>
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: '#D4AF37', marginTop: '6px', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {(c.subcategories || []).map(s => s.name).join(', ') || 'No subcategories'}
                             </div>
                           </div>
