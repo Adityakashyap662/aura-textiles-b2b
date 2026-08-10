@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Lock,
   User,
@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronUp,
   HelpCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { api } from './utils/api';
 
