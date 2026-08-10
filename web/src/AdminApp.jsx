@@ -858,24 +858,26 @@ export default function AdminApp() {
     const fullPayload = {
       ...categoryForm,
       id: catId,
+      name: categoryForm.name.trim(),
       subcategories: subcats
     };
 
     try {
-      if (editingCategory) {
-        const updated = await api.updateCategory(catId, fullPayload);
-        setCategoriesList(prev => prev.map(c => c.id === catId ? updated : c));
+      const isEditMode = Boolean(editingCategory && typeof editingCategory === 'object' && editingCategory.id);
+      if (isEditMode) {
+        const updated = await api.updateCategory(editingCategory.id, fullPayload);
+        setCategoriesList(prev => prev.map(c => c.id === editingCategory.id ? (updated || fullPayload) : c));
         showToast('success', 'Category Updated', `Category '${categoryForm.name}' saved.`);
       } else {
         const added = await api.createCategory(fullPayload);
-        setCategoriesList(prev => [...prev, added]);
+        setCategoriesList(prev => [added || fullPayload, ...prev]);
         showToast('success', 'Category Created', `New department '${categoryForm.name}' created successfully.`);
       }
       setEditingCategory(null);
       setSubcategoryInput('');
       syncDatabase();
     } catch (err) {
-      showToast('error', 'API Save Error', err.message);
+      showToast('error', 'API Save Error', err.message || 'Error saving category');
     }
   };
 

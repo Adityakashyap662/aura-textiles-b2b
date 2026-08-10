@@ -125,6 +125,7 @@ const CategorySchema = new mongoose.Schema(
     name: { type: String, required: true },
     icon: { type: String, default: 'shirt' },
     badge: { type: String, default: '' },
+    image: { type: String, default: '' },
     itemCount: { type: Number, default: 0 },
     subcategories: [SubcategorySchema],
   },

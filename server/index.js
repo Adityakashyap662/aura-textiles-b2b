@@ -899,17 +899,18 @@ app.get('/api/categories', async (req, res) => {
 
 app.post('/api/categories', async (req, res) => {
   try {
-    const { id, name, icon, badge, subcategories } = req.body;
-    if (!name) {
+    const { id, name, icon, badge, image, subcategories } = req.body;
+    if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Category Name is required.' });
     }
 
-    const catId = id || name.toLowerCase().replace(/\s+/g, '_');
+    const catId = id || name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
     const newCategory = {
       id: catId,
-      name,
+      name: name.trim(),
       icon: icon || 'shirt',
       badge: badge || '',
+      image: image || 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=80',
       itemCount: 0,
       subcategories: subcategories || [],
     };
@@ -919,7 +920,7 @@ app.post('/api/categories', async (req, res) => {
     } else {
       const idx = memoryCategories.findIndex((c) => c.id === catId);
       if (idx !== -1) memoryCategories[idx] = newCategory;
-      else memoryCategories.push(newCategory);
+      else memoryCategories.unshift(newCategory);
     }
 
     res.json({ success: true, message: 'Category saved successfully!', category: newCategory });
