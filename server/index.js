@@ -403,6 +403,9 @@ async function sendOTPEmail(email, otp, subjectType = 'Verification') {
           return { delivered: true, provider: 'brevo' };
         } else {
           console.log(`⚠️ [Brevo API Sender Error for ${senderEmail}]: ${data?.message || JSON.stringify(data)}`);
+          if (data?.message && data.message.includes('sender you used') && data.message.includes('not valid')) {
+            console.log(`💡 [Brevo Fix Advice]: Add & verify '${senderEmail}' at https://app.brevo.com/senders/management/senders`);
+          }
         }
       } catch (err) {
         console.log(`❌ [Brevo API Request Error for ${senderEmail}]: ${err.message}`);
