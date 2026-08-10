@@ -1640,7 +1640,15 @@ export default function AdminApp() {
 
       {/* LEFT SIDEBAR NAVIGATION */}
       <aside style={{ width: '270px', background: '#0a0a0a', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div
+          onClick={() => {
+            setActiveTab('dashboard');
+            setEditingProduct(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}
+          title="Click to go to Admin Dashboard"
+        >
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(212,175,55,0.15)', border: '1.5px solid #d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={20} color="#d4af37" />
           </div>
@@ -1968,7 +1976,15 @@ export default function AdminApp() {
                           📂 All Departments ({productsList.length})
                         </option>
                         {categoriesList.map((cat) => {
-                          const count = productsList.filter((p) => p.category === cat.id || p.category === cat.name).length;
+                          const count = productsList.filter((p) => {
+                            const target = String(cat.id).toLowerCase();
+                            const primary = String(p.category || '').toLowerCase();
+                            if (primary === target || primary === String(cat.name).toLowerCase()) return true;
+                            if (Array.isArray(p.categories)) {
+                              return p.categories.some(c => String(c).toLowerCase() === target || String(c).toLowerCase() === String(cat.name).toLowerCase());
+                            }
+                            return false;
+                          }).length;
                           return (
                             <option key={cat.id} value={cat.id} style={{ background: '#0b0c10', color: '#fff' }}>
                               {cat.name} ({count})
@@ -1982,7 +1998,7 @@ export default function AdminApp() {
                           setProductForm({
                             id: '',
                             title: '', brand: '', description: '', price: 0, mrp: 0, discount: 0,
-                            category: 'sarees', tags: ['new-arrival'], careInstructions: 'Dry clean only', highlights: '100% export quality weave',
+                            category: 'sarees', status: 'active', estArrivalDate: '', tags: ['new-arrival'], careInstructions: 'Dry clean only', highlights: '100% export quality weave',
                             images: [],
                             videos: [],
                             colors: [],
@@ -2024,6 +2040,7 @@ export default function AdminApp() {
                             <th style={{ padding: '14px 18px' }}>Brand / Title</th>
                             <th style={{ padding: '14px 18px' }}>Category</th>
                             <th style={{ padding: '14px 18px' }}>Selling Price</th>
+                            <th style={{ padding: '14px 18px' }}>Status</th>
                             <th style={{ padding: '14px 18px' }}>Action</th>
                           </tr>
                         </thead>
@@ -2032,10 +2049,20 @@ export default function AdminApp() {
                             const filtered = productsList.filter(p => {
                               const title = (p.title || '').toLowerCase();
                               const brand = (p.brand || '').toLowerCase();
-                              const cat = (p.category || '').toLowerCase();
                               const query = productSearch.toLowerCase();
-                              const matchesQuery = !query || title.includes(query) || brand.includes(query) || cat.includes(query);
-                              const matchesCat = adminCategoryFilter === 'all' || p.category === adminCategoryFilter;
+                              const matchesQuery = !query || title.includes(query) || brand.includes(query);
+                              
+                              let matchesCat = adminCategoryFilter === 'all';
+                              if (!matchesCat) {
+                                const target = String(adminCategoryFilter).toLowerCase();
+                                const primary = String(p.category || '').toLowerCase();
+                                const catObj = categoriesList.find(c => c.id === adminCategoryFilter);
+                                const targetName = catObj ? String(catObj.name).toLowerCase() : target;
+                                if (primary === target || primary === targetName) matchesCat = true;
+                                if (Array.isArray(p.categories)) {
+                                  if (p.categories.some(c => String(c).toLowerCase() === target || String(c).toLowerCase() === targetName)) matchesCat = true;
+                                }
+                              }
                               return matchesQuery && matchesCat;
                             });
                             
@@ -2058,6 +2085,35 @@ export default function AdminApp() {
                                     </td>
                                     <td style={{ padding: '12px 18px', textTransform: 'uppercase', fontSize: '11px', fontWeight: 'bold', color: '#D4AF37' }}>{p.category}</td>
                                     <td style={{ padding: '12px 18px', fontWeight: 'bold' }}>₹{p.price}</td>
+                                    <td style={{ padding: '12px 18px' }}>
+                                      <select
+                                        value={p.status || 'active'}
+                                        onChange={async (e) => {
+                                          const newStatus = e.target.value;
+                                          try {
+                                            await api.updateCatalog(p.id, { status: newStatus });
+                                            setProductsList(prev => prev.map(item => item.id === p.id ? { ...item, status: newStatus } : item));
+                                            showToast('success', 'Status Updated', `Set status to ${newStatus.toUpperCase()} for ${p.title}`);
+                                          } catch (err) {
+                                            showToast('error', 'Status Update Failed', err.message);
+                                          }
+                                        }}
+                                        style={{
+                                          padding: '4px 8px',
+                                          borderRadius: '6px',
+                                          fontSize: '11px',
+                                          fontWeight: '800',
+                                          cursor: 'pointer',
+                                          border: 'none',
+                                          background: (p.status || 'active') === 'active' ? 'rgba(16,185,129,0.2)' : (p.status === 'out_of_stock' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'),
+                                          color: (p.status || 'active') === 'active' ? '#10B981' : (p.status === 'out_of_stock' ? '#F59E0B' : '#EF4444'),
+                                        }}
+                                      >
+                                        <option value="active" style={{ background: '#000', color: '#10B981' }}>🟢 Active</option>
+                                        <option value="out_of_stock" style={{ background: '#000', color: '#F59E0B' }}>🟠 Out of Stock</option>
+                                        <option value="inactive" style={{ background: '#000', color: '#EF4444' }}>🔴 Inactive</option>
+                                      </select>
+                                    </td>
                                     <td style={{ padding: '12px 18px' }}>
                                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <button className="write-review-btn" style={{ padding: '8px 14px', fontSize: '12.5px', borderRadius: '6px' }} onClick={() => {
@@ -2327,10 +2383,45 @@ export default function AdminApp() {
                           </div>
                         )}
 
-                        <div>
-                          <label style={adminLabelStyle}>Dispatch Facility & Address</label>
-                          <input type="text" style={adminInputStyle} value={productForm.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub'} onChange={(e) => setProductForm({ ...productForm, dispatchFacility: e.target.value })} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                          <div>
+                            <label style={adminLabelStyle}>Product Status on Website</label>
+                            <select
+                              style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }}
+                              value={productForm.status || 'active'}
+                              onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
+                            >
+                              <option value="active">🟢 Active (Live on Storefront)</option>
+                              <option value="out_of_stock">🟠 Out of Stock (Live with Restock Badge & Pre-Order)</option>
+                              <option value="inactive">🔴 Inactive (Completely Hidden from Storefront)</option>
+                            </select>
+                          </div>
+
+                          {productForm.status === 'out_of_stock' ? (
+                            <div>
+                              <label style={adminLabelStyle}>Estimated Restock / Arrival Date</label>
+                              <input
+                                type="text"
+                                style={adminInputStyle}
+                                placeholder="e.g. 25 Aug 2026"
+                                value={productForm.estArrivalDate || ''}
+                                onChange={(e) => setProductForm({ ...productForm, estArrivalDate: e.target.value })}
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <label style={adminLabelStyle}>Dispatch Facility & Address</label>
+                              <input type="text" style={adminInputStyle} value={productForm.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub'} onChange={(e) => setProductForm({ ...productForm, dispatchFacility: e.target.value })} />
+                            </div>
+                          )}
                         </div>
+
+                        {productForm.status === 'out_of_stock' && (
+                          <div>
+                            <label style={adminLabelStyle}>Dispatch Facility & Address</label>
+                            <input type="text" style={adminInputStyle} value={productForm.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub'} onChange={(e) => setProductForm({ ...productForm, dispatchFacility: e.target.value })} />
+                          </div>
+                        )}
 
                         <div>
                           <label style={adminLabelStyle}>Description / Highlights</label>

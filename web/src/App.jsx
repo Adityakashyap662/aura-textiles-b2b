@@ -476,7 +476,7 @@ export default function App() {
 
   // ── Filtered Catalogs Computation ──
   const filteredCatalogs = useMemo(() => {
-    let list = [...appCatalogs];
+    let list = appCatalogs.filter((c) => c.status !== 'inactive');
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -714,10 +714,16 @@ export default function App() {
         <div onClick={() => handleSelectCatalog(catalog.id)} style={{ position: 'relative', height: '320px', cursor: 'pointer' }}>
           <img src={catalog.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'} alt={catalog.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           
-          <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px', zIndex: 4 }}>
             <span className="badge-pcs">{catalog.pcsInSet || 6} Pcs Set</span>
-            {catalog.discount > 0 && (
-              <span className="badge-pcs" style={{ background: '#e94560' }}>{catalog.discount}% OFF</span>
+            {catalog.status === 'out_of_stock' ? (
+              <span className="badge-pcs" style={{ background: '#f59e0b', color: '#000', fontWeight: '900', border: 'none' }}>
+                OUT OF STOCK • Est: {catalog.estArrivalDate || '7 Days'}
+              </span>
+            ) : (
+              catalog.discount > 0 && (
+                <span className="badge-pcs" style={{ background: '#e94560' }}>{catalog.discount}% OFF</span>
+              )
             )}
           </div>
 
@@ -842,7 +848,11 @@ export default function App() {
                   : undefined,
               }}
             >
-              {isInCart(catalog.id, 'full_set') ? (
+              {catalog.status === 'out_of_stock' ? (
+                <>
+                  <Clock size={14} /> Pre-Order Set
+                </>
+              ) : isInCart(catalog.id, 'full_set') ? (
                 <>
                   <Check size={14} /> Added in Cart ✓
                 </>
@@ -2165,12 +2175,20 @@ export default function App() {
 
             {/* Comprehensive Catalog Specifications (TextileExport Replica) */}
             <div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
                 <span className="badge-pcs">{activeCatalog.pcsInSet} Pcs Full Catalog</span>
-                <span className="badge-stock">In Stock • 24-Hr Express Dispatch</span>
-                <span className="badge-singles" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', borderColor: '#f59e0b' }}>
-                  55% OFF MRP
-                </span>
+                {activeCatalog.status === 'out_of_stock' ? (
+                  <span className="badge-stock" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderColor: '#f59e0b' }}>
+                    ⚠️ OUT OF STOCK • Est. Restock Date: {activeCatalog.estArrivalDate || '7 Days'}
+                  </span>
+                ) : (
+                  <span className="badge-stock">In Stock • 24-Hr Express Dispatch</span>
+                )}
+                {activeCatalog.discount > 0 && (
+                  <span className="badge-singles" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', borderColor: '#f59e0b' }}>
+                    {activeCatalog.discount}% OFF MRP
+                  </span>
+                )}
               </div>
 
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '800', marginBottom: '8px', color: '#fff' }}>

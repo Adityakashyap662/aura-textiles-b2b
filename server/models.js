@@ -38,6 +38,8 @@ const CatalogSchema = new mongoose.Schema(
     length: { type: String, default: '5.5 Mtr' },
     catalogWeight: { type: String, default: '5.0 KG' },
     dispatchFacility: { type: String, default: 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub' },
+    status: { type: String, default: 'active' },
+    estArrivalDate: { type: String, default: '' },
     rating: { type: Number, default: 5.0 },
     reviewsCount: { type: Number, default: 1 },
     images: { type: [String], default: [] },

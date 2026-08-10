@@ -794,6 +794,8 @@ app.post('/api/catalogs', async (req, res) => {
       length: catalogData.length || '5.5 Mtr + Blouse Piece',
       catalogWeight: catalogData.catalogWeight || '5.0 KG',
       dispatchFacility: catalogData.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub',
+      status: catalogData.status || 'active',
+      estArrivalDate: catalogData.estArrivalDate || '',
       rating: 5.0,
       reviewsCount: 1,
       images: catalogData.images && catalogData.images.length > 0
