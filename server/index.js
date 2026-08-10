@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
 const { BrevoClient } = require('@getbrevo/brevo');
 const mongoose = require('mongoose');
 const { User, Catalog, Order, Otp, QuoteField, QuoteRequest, Category } = require('./models');
-const { defaultQuoteFields, defaultQuoteRequests, categories: initialCategoriesSeed } = require('./memoryDb');
+const { defaultQuoteFields, defaultQuoteRequests, categories: initialCategoriesSeed, products: initialCatalogsSeed } = require('./memoryDb');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
@@ -192,44 +192,7 @@ const initialOrdersSeed = [
   }
 ];
 
-const initialCatalogsSeed = [
-  {
-    id: 'cat_saree_001',
-    sku: 'AUR-S-7009',
-    title: 'Soft Silk 7009 Lichi Silk Jacquard Work Saree Collection',
-    category: 'sarees',
-    brand: 'Aura Weaves Noida',
-    pcsInSet: 6,
-    pricePerPiece: 850,
-    singlesAvailable: true,
-    singlesPrice: 950,
-    fabric: 'Soft Lichi Silk Jacquard',
-    work: 'All-Over Gold Zari Jacquard Weaving with Contrast Rich Pallu & Tassels',
-    length: '5.5 Mtr Saree + 0.8 Mtr Unstitched Blouse Piece',
-    catalogWeight: '5.1 KG',
-    rating: 4.9,
-    reviewsCount: 124,
-    images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
-  },
-  {
-    id: 'cat_lehenga_001',
-    sku: 'AUR-L-9041',
-    title: 'Bridal Velvet 9041 Heavy Zardozi Embroidery Lehenga Choli Set',
-    category: 'lehenga',
-    brand: 'Aura Royal Noida',
-    pcsInSet: 4,
-    pricePerPiece: 2450,
-    singlesAvailable: true,
-    singlesPrice: 2650,
-    fabric: 'Micro Velvet 9000 & Net Dupatta',
-    work: 'Heavy Multi-Thread Zardozi, Cutdana & Sequins Handwork',
-    length: 'Semi-Stitched Lehenga (Up to 44 Inches Waist)',
-    catalogWeight: '9.5 KG',
-    rating: 5.0,
-    reviewsCount: 88,
-    images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=1000&auto=format&fit=crop&q=80'],
-  },
-];
+// initialCatalogsSeed is imported directly from ./memoryDb (containing all 60 wholesale catalog products)
 
 async function seedMongoDBData() {
   if (!isMongoConnected) return;
