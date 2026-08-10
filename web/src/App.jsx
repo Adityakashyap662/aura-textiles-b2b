@@ -426,16 +426,23 @@ export default function App() {
     return appCatalogs.filter((c) => wishlist.includes(c.id));
   }, [wishlist, appCatalogs]);
 
-  // ── 1.5 SECONDS AUTO SLIDESHOW FOR MULTI-PHOTO PRODUCTS ──
+  // ── UNIFIED MEDIA & NORMAL 4.5 SECONDS AUTO SLIDESHOW FOR MULTI-MEDIA PRODUCTS ──
+  const activeCatalogMedia = useMemo(() => {
+    if (!activeCatalog) return [];
+    const imgs = (activeCatalog.images || []).map((url) => ({ type: 'image', url }));
+    const vids = (activeCatalog.videos || []).map((url) => ({ type: 'video', url }));
+    return [...imgs, ...vids];
+  }, [activeCatalog]);
+
   useEffect(() => {
-    if (currentScreen !== 'pdp' || !pdpAutoSlide || !activeCatalog || !activeCatalog.images || activeCatalog.images.length <= 1) {
+    if (currentScreen !== 'pdp' || !pdpAutoSlide || activeCatalogMedia.length <= 1) {
       return;
     }
     const interval = setInterval(() => {
-      setPdpSelectedImageIdx((prev) => (prev + 1) % activeCatalog.images.length);
-    }, 1500); // 1.5 sec auto switch
+      setPdpSelectedImageIdx((prev) => (prev + 1) % activeCatalogMedia.length);
+    }, 4500); // 4.5 seconds (Normal, smooth slideshow pace)
     return () => clearInterval(interval);
-  }, [currentScreen, pdpAutoSlide, activeCatalog]);
+  }, [currentScreen, pdpAutoSlide, activeCatalogMedia]);
 
   // Product Click Handler (Navigates directly to PDP & clears search)
   const handleSelectCatalog = (catalogId) => {
@@ -2066,36 +2073,60 @@ export default function App() {
           </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '40px', marginBottom: '60px' }}>
-            {/* Gallery Images with 1.5s Auto Slideshow */}
+            {/* Gallery Photos & Videos with Normal 4.5s Auto Slideshow */}
             <div>
-              <div style={{ borderRadius: '16px', overflow: 'hidden', height: '480px', border: '1px solid var(--border-gold)', marginBottom: '16px', position: 'relative' }}>
-                <img
-                  src={activeCatalog.images[pdpSelectedImageIdx] || activeCatalog.images[0]}
-                  alt={activeCatalog.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.4s ease' }}
-                />
-                {activeCatalog.images.length > 1 && (
+              <div style={{ borderRadius: '16px', overflow: 'hidden', height: '480px', border: '1px solid var(--border-gold)', marginBottom: '16px', position: 'relative', background: '#000' }}>
+                {activeCatalogMedia[pdpSelectedImageIdx]?.type === 'video' ? (
+                  <video
+                    src={activeCatalogMedia[pdpSelectedImageIdx].url}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <img
+                    src={activeCatalogMedia[pdpSelectedImageIdx]?.url || activeCatalog.images?.[0]}
+                    alt={activeCatalog.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.4s ease' }}
+                  />
+                )}
+
+                {activeCatalogMedia.length > 1 && (
                   <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(11,12,16,0.85)', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', color: '#d4af37', fontWeight: '700' }}>
-                    Auto 1.5s Image Cycle ({pdpSelectedImageIdx + 1}/{activeCatalog.images.length})
+                    4.5s Media Cycle ({pdpSelectedImageIdx + 1}/{activeCatalogMedia.length})
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
-                {activeCatalog.images.map((img, idx) => (
+              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+                {activeCatalogMedia.map((media, idx) => (
                   <div
                     key={idx}
                     onClick={() => setPdpSelectedImageIdx(idx)}
                     style={{
+                      position: 'relative',
                       width: '70px',
                       height: '70px',
+                      minWidth: '70px',
                       borderRadius: '8px',
                       overflow: 'hidden',
                       cursor: 'pointer',
                       border: pdpSelectedImageIdx === idx ? '2px solid #d4af37' : '1px solid rgba(255,255,255,0.1)',
+                      background: '#000',
                     }}
                   >
-                    <img src={img} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {media.type === 'video' ? (
+                      <>
+                        <video src={media.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: '10px', background: '#d4af37', color: '#000', fontWeight: '900', padding: '2px 5px', borderRadius: '4px' }}>▶ VID</span>
+                        </div>
+                      </>
+                    ) : (
+                      <img src={media.url} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
                   </div>
                 ))}
               </div>

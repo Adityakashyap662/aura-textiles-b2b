@@ -26,6 +26,7 @@ const CatalogSchema = new mongoose.Schema(
     sku: { type: String, required: true },
     title: { type: String, required: true },
     category: { type: String, required: true, index: true },
+    categories: { type: [String], default: [] },
     brand: { type: String, default: 'Aura Weaves Noida' },
     pcsInSet: { type: Number, default: 6 },
     pricePerPiece: { type: Number, required: true },
@@ -35,11 +36,13 @@ const CatalogSchema = new mongoose.Schema(
     work: { type: String, default: 'Embroidery' },
     length: { type: String, default: '5.5 Mtr' },
     catalogWeight: { type: String, default: '5.0 KG' },
+    dispatchFacility: { type: String, default: 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub' },
     rating: { type: Number, default: 5.0 },
     reviewsCount: { type: Number, default: 1 },
     images: { type: [String], default: [] },
     videos: { type: [String], default: [] },
     colors: { type: Array, default: [] },
+    sizes: { type: Array, default: [] },
   },
   { timestamps: true }
 );

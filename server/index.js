@@ -776,7 +776,8 @@ app.post('/api/catalogs', async (req, res) => {
       title: catalogData.title || 'New Wholesale Catalog',
       brand: catalogData.brand || 'Aura Weaves Noida',
       description: catalogData.description || 'Export quality wholesale apparel',
-      category: catalogData.category || 'sarees',
+      category: typeof catalogData.category === 'string' ? catalogData.category : (Array.isArray(catalogData.categories) ? catalogData.categories[0] : 'sarees'),
+      categories: Array.isArray(catalogData.categories) ? catalogData.categories : [catalogData.category || 'sarees'],
       tags: catalogData.tags || ['new-arrival'],
       careInstructions: catalogData.careInstructions || 'Dry clean only',
       highlights: catalogData.highlights || '100% export quality weave',
@@ -791,6 +792,7 @@ app.post('/api/catalogs', async (req, res) => {
       work: catalogData.work || 'Handcrafted Zari & Resham Embroidery',
       length: catalogData.length || '5.5 Mtr + Blouse Piece',
       catalogWeight: catalogData.catalogWeight || '5.0 KG',
+      dispatchFacility: catalogData.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub',
       rating: 5.0,
       reviewsCount: 1,
       images: catalogData.images && catalogData.images.length > 0

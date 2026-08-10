@@ -855,17 +855,28 @@ export default function AdminApp() {
     }
 
     const isEditMode = Boolean(editingProduct && typeof editingProduct === 'object' && editingProduct.id);
-    const prodId = isEditMode ? editingProduct.id : (productForm.id || `cat_${productForm.category || 'prod'}_${Date.now()}`);
+    const prodId = isEditMode ? editingProduct.id : (productForm.id || `cat_${Date.now()}`);
+
+    const categoriesArray = Array.isArray(productForm.categories) && productForm.categories.length > 0
+      ? productForm.categories
+      : [typeof productForm.category === 'string' ? productForm.category : 'sarees'];
+
+    const primaryCategory = typeof productForm.category === 'string' && productForm.category
+      ? productForm.category
+      : (categoriesArray[0] || 'sarees');
 
     const payload = {
       ...productForm,
       id: prodId,
       title: productForm.title.trim(),
+      category: primaryCategory,
+      categories: categoriesArray,
       images: productForm.images && productForm.images.length > 0 ? productForm.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
+      videos: productForm.videos || [],
       pricePerPiece: Number(productForm.price) || 850,
       pcsInSet: Number(productForm.pcsInSet) || 6,
-      singlesAvailable: true,
-      singlesPrice: Number(productForm.price) ? Number(productForm.price) + 100 : 950,
+      singlesAvailable: productForm.singlesAvailable !== undefined ? productForm.singlesAvailable : true,
+      singlesPrice: Number(productForm.singlesPrice) || (Number(productForm.price) ? Number(productForm.price) + 100 : 950),
     };
 
     try {
