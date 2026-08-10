@@ -1442,30 +1442,23 @@ export default function App() {
             >
               All Wholesale Catalogs
             </span>
-            <span
-              onClick={() => handleNav('plp', 'men_sherwanis')}
-              style={{
-                cursor: 'pointer',
-                color: currentScreen === 'plp' && plpCategory === 'men_sherwanis' ? '#d4af37' : '#94a3b8',
-                paddingBottom: '4px',
-                borderBottom: currentScreen === 'plp' && plpCategory === 'men_sherwanis' ? '2px solid #d4af37' : '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-            >
-              Men's Sherwanis & Kurtas
-            </span>
-            <span
-              onClick={() => handleNav('plp', 'sarees')}
-              style={{
-                cursor: 'pointer',
-                color: currentScreen === 'plp' && plpCategory === 'sarees' ? '#d4af37' : '#94a3b8',
-                paddingBottom: '4px',
-                borderBottom: currentScreen === 'plp' && plpCategory === 'sarees' ? '2px solid #d4af37' : '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-            >
-              Women's Silk Sarees
-            </span>
+            {appCategories
+              .filter((cat) => cat.id !== 'all')
+              .map((cat) => (
+                <span
+                  key={cat.id}
+                  onClick={() => handleNav('plp', cat.id)}
+                  style={{
+                    cursor: 'pointer',
+                    color: currentScreen === 'plp' && plpCategory === cat.id ? '#d4af37' : '#94a3b8',
+                    paddingBottom: '4px',
+                    borderBottom: currentScreen === 'plp' && plpCategory === cat.id ? '2px solid #d4af37' : '2px solid transparent',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {cat.name}
+                </span>
+              ))}
             <span
               onClick={() => handleNav('reseller')}
               style={{
@@ -1532,19 +1525,20 @@ export default function App() {
             <Grid size={18} color="#d4af37" /> 🛍️ All Wholesale Catalogs
           </div>
 
-          <div
-            onClick={() => handleNav('plp', 'sarees')}
-            style={{ padding: '12px 16px', background: plpCategory === 'sarees' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            <Sparkles size={18} color="#e94560" /> 🥻 Women's Silk Sarees
-          </div>
-
-          <div
-            onClick={() => handleNav('plp', 'men_sherwanis')}
-            style={{ padding: '12px 16px', background: plpCategory === 'men_sherwanis' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-          >
-            <User size={18} color="#d4af37" /> 👔 Men's Sherwanis & Kurtas
-          </div>
+          {appCategories
+            .filter((cat) => cat.id !== 'all')
+            .map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => {
+                  handleNav('plp', cat.id);
+                  setMobileMenuOpen(false);
+                }}
+                style={{ padding: '12px 16px', background: plpCategory === cat.id ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+              >
+                <Sparkles size={18} color="#d4af37" /> 🛍️ {cat.name}
+              </div>
+            ))}
 
           <div
             onClick={() => handleNav('reseller')}
