@@ -47,7 +47,7 @@ import {
   Building2
 } from 'lucide-react';
 
-import { wholesaleCatalogs, categories as staticCategories, testimonialReviews } from './data/wholesaleCatalogs';
+import { wholesaleCatalogs as staticCatalogs, categories as staticCategories, testimonialReviews } from './data/wholesaleCatalogs';
 import { currencies, formatPrice } from './data/currencies';
 import { countries } from '../../src/data/countries';
 import { api } from './utils/api';
@@ -235,7 +235,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const prodId = params.get('product');
-    if (prodId && wholesaleCatalogs.some((c) => c.id === prodId)) {
+    if (prodId && appCatalogs.some((c) => c.id === prodId)) {
       setSelectedCatalogId(prodId);
       setCurrentScreen('pdp');
     }
@@ -335,11 +335,29 @@ export default function App() {
     }
   }, []);
 
+  // Dynamic Wholesale Catalogs State
+  const [appCatalogs, setAppCatalogs] = useState(staticCatalogs);
+
+  const fetchCatalogs = useCallback(async () => {
+    try {
+      const prods = await api.getCatalogs('INR');
+      if (prods && Array.isArray(prods) && prods.length > 0) {
+        setAppCatalogs(prods);
+      }
+    } catch (e) {
+      console.warn('Error fetching dynamic catalogs:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
-    const interval = setInterval(fetchCategories, 5000);
+    fetchCatalogs();
+    const interval = setInterval(() => {
+      fetchCategories();
+      fetchCatalogs();
+    }, 5000);
     return () => clearInterval(interval);
-  }, [fetchCategories]);
+  }, [fetchCategories, fetchCatalogs]);
 
   const handleQuoteFormSubmit = async (e) => {
     e.preventDefault();
@@ -387,13 +405,13 @@ export default function App() {
 
   // ── Active Catalog Object for PDP ──
   const activeCatalog = useMemo(() => {
-    return wholesaleCatalogs.find((c) => c.id === selectedCatalogId) || wholesaleCatalogs[0];
-  }, [selectedCatalogId]);
+    return appCatalogs.find((c) => c.id === selectedCatalogId) || appCatalogs[0];
+  }, [selectedCatalogId, appCatalogs]);
 
   // Related Catalogs for PDP Bottom Section
   const relatedCatalogs = useMemo(() => {
-    return wholesaleCatalogs.filter((c) => c.id !== activeCatalog.id).slice(0, 4);
-  }, [activeCatalog]);
+    return appCatalogs.filter((c) => c.id !== activeCatalog?.id).slice(0, 4);
+  }, [activeCatalog, appCatalogs]);
 
   // Helper to check if item is already in cart
   const isInCart = useCallback(
@@ -405,8 +423,8 @@ export default function App() {
 
   // Filtered Wishlist Catalogs
   const wishlistCatalogs = useMemo(() => {
-    return wholesaleCatalogs.filter((c) => wishlist.includes(c.id));
-  }, [wishlist]);
+    return appCatalogs.filter((c) => wishlist.includes(c.id));
+  }, [wishlist, appCatalogs]);
 
   // ── 1.5 SECONDS AUTO SLIDESHOW FOR MULTI-PHOTO PRODUCTS ──
   useEffect(() => {
@@ -447,16 +465,16 @@ export default function App() {
 
   // ── Filtered Catalogs Computation ──
   const filteredCatalogs = useMemo(() => {
-    let list = [...wholesaleCatalogs];
+    let list = [...appCatalogs];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
         (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.fabric.toLowerCase().includes(q) ||
-          c.sku.toLowerCase().includes(q) ||
-          c.brand.toLowerCase().includes(q)
+          (c.title || '').toLowerCase().includes(q) ||
+          (c.fabric || '').toLowerCase().includes(q) ||
+          (c.sku || '').toLowerCase().includes(q) ||
+          (c.brand || '').toLowerCase().includes(q)
       );
     }
 
@@ -465,25 +483,25 @@ export default function App() {
     }
 
     if (plpFabricFilter !== 'all') {
-      list = list.filter((c) => c.fabric.toLowerCase().includes(plpFabricFilter.toLowerCase()));
+      list = list.filter((c) => (c.fabric || '').toLowerCase().includes(plpFabricFilter.toLowerCase()));
     }
 
-    list = list.filter((c) => c.pricePerPiece <= plpPriceFilter);
+    list = list.filter((c) => (c.pricePerPiece || c.price || 0) <= plpPriceFilter);
 
     if (plpSinglesOnly) {
       list = list.filter((c) => c.singlesAvailable);
     }
 
     if (plpSortOption === 'price_low') {
-      list.sort((a, b) => a.pricePerPiece - b.pricePerPiece);
+      list.sort((a, b) => (a.pricePerPiece || a.price || 0) - (b.pricePerPiece || b.price || 0));
     } else if (plpSortOption === 'price_high') {
-      list.sort((a, b) => b.pricePerPiece - a.pricePerPiece);
+      list.sort((a, b) => (b.pricePerPiece || b.price || 0) - (a.pricePerPiece || a.price || 0));
     } else if (plpSortOption === 'rating') {
-      list.sort((a, b) => b.rating - a.rating);
+      list.sort((a, b) => (b.rating || 5) - (a.rating || 5));
     }
 
     return list;
-  }, [searchQuery, plpCategory, plpFabricFilter, plpPriceFilter, plpSinglesOnly, plpSortOption]);
+  }, [searchQuery, plpCategory, plpFabricFilter, plpPriceFilter, plpSinglesOnly, plpSortOption, appCatalogs]);
 
   // ── Cart Handlers (Pure Immutable State Updaters) ──
   const handleAddToCart = (catalog, orderType = 'full_set', stitching = null) => {
@@ -1697,7 +1715,7 @@ export default function App() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
-              {wholesaleCatalogs.slice(0, 8).map((catalog) => (
+              {appCatalogs.slice(0, 8).map((catalog) => (
                 <div key={catalog.id} className="catalog-card">
                   <div
                     onClick={() => handleSelectCatalog(catalog.id)}

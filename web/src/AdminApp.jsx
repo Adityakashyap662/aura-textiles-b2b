@@ -803,12 +803,19 @@ export default function AdminApp() {
 
   // PRODUCT CRUD SAVE / DELETE (Connected to Node.js REST API)
   const handleSaveProduct = async () => {
-    if (!productForm.title || !productForm.brand) {
-      showToast('error', 'Validation Error', 'Product Title and Brand are required.');
+    if (!productForm.title || !productForm.title.trim()) {
+      showToast('error', 'Validation Error', 'Product Title is required.');
       return;
     }
+
+    const isEditMode = Boolean(editingProduct && typeof editingProduct === 'object' && editingProduct.id);
+    const prodId = isEditMode ? editingProduct.id : (productForm.id || `cat_${productForm.category || 'prod'}_${Date.now()}`);
+
     const payload = {
       ...productForm,
+      id: prodId,
+      title: productForm.title.trim(),
+      images: productForm.images && productForm.images.length > 0 ? productForm.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
       pricePerPiece: Number(productForm.price) || 850,
       pcsInSet: Number(productForm.pcsInSet) || 6,
       singlesAvailable: true,
@@ -816,17 +823,19 @@ export default function AdminApp() {
     };
 
     try {
-      if (editingProduct) {
-        const res = await api.updateCatalog(productForm.id, payload);
+      if (isEditMode) {
+        const res = await api.updateCatalog(prodId, payload);
+        setProductsList(prev => prev.map(p => p.id === prodId ? (res.catalog || res || payload) : p));
         showToast('success', 'Catalog Updated', `Saved changes for catalog: ${productForm.title}`);
       } else {
         const res = await api.createCatalog(payload);
+        setProductsList(prev => [(res.catalog || res || payload), ...prev]);
         showToast('success', 'Catalog Created 👑', `Added new wholesale catalog: ${productForm.title}`);
       }
       setEditingProduct(null);
       syncDatabase();
     } catch (err) {
-      showToast('error', 'API Save Error', err.message);
+      showToast('error', 'API Save Error', err.message || 'Failed to save product');
     }
   };
 
