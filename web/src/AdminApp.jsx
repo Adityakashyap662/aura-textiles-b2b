@@ -2110,7 +2110,7 @@ export default function AdminApp() {
                                         }}
                                       >
                                         <option value="active" style={{ background: '#000', color: '#10B981' }}>🟢 Active</option>
-                                        <option value="out_of_stock" style={{ background: '#000', color: '#F59E0B' }}>🟠 Out of Stock</option>
+                                        <option value="out_of_stock" style={{ background: '#000', color: '#F59E0B' }}>🟠 Coming Soon</option>
                                         <option value="inactive" style={{ background: '#000', color: '#EF4444' }}>🔴 Inactive</option>
                                       </select>
                                     </td>
@@ -2392,7 +2392,7 @@ export default function AdminApp() {
                               onChange={(e) => setProductForm({ ...productForm, status: e.target.value })}
                             >
                               <option value="active">🟢 Active (Live on Storefront)</option>
-                              <option value="out_of_stock">🟠 Out of Stock (Live with Restock Badge & Pre-Order)</option>
+                              <option value="out_of_stock">🟠 Coming Soon (Live with Restock Badge & Pre-Order)</option>
                               <option value="inactive">🔴 Inactive (Completely Hidden from Storefront)</option>
                             </select>
                           </div>

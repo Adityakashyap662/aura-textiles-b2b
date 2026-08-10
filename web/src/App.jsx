@@ -718,7 +718,7 @@ export default function App() {
             <span className="badge-pcs">{catalog.pcsInSet || 6} Pcs Set</span>
             {catalog.status === 'out_of_stock' ? (
               <span className="badge-pcs" style={{ background: '#f59e0b', color: '#000', fontWeight: '900', border: 'none' }}>
-                OUT OF STOCK • Est: {catalog.estArrivalDate || '7 Days'}
+                COMING SOON • Est: {catalog.estArrivalDate || '7 Days'}
               </span>
             ) : (
               catalog.discount > 0 && (
@@ -2179,7 +2179,7 @@ export default function App() {
                 <span className="badge-pcs">{activeCatalog.pcsInSet} Pcs Full Catalog</span>
                 {activeCatalog.status === 'out_of_stock' ? (
                   <span className="badge-stock" style={{ background: 'rgba(245,158,11,0.2)', color: '#f59e0b', borderColor: '#f59e0b' }}>
-                    ⚠️ OUT OF STOCK • Est. Restock Date: {activeCatalog.estArrivalDate || '7 Days'}
+                    ⏰ COMING SOON • Est. Restock Date: {activeCatalog.estArrivalDate || '7 Days'}
                   </span>
                 ) : (
                   <span className="badge-stock">In Stock • 24-Hr Express Dispatch</span>
