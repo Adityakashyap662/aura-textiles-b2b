@@ -842,10 +842,12 @@ export default function AdminApp() {
 
   // CATEGORY CRUD SAVE / DELETE
   const handleSaveCategory = async () => {
-    if (!categoryForm.id || !categoryForm.name) {
-      showToast('error', 'Validation Error', 'Category ID and Name are required.');
+    if (!categoryForm.name || !categoryForm.name.trim()) {
+      showToast('error', 'Validation Error', 'Category Name is required.');
       return;
     }
+
+    const catId = categoryForm.id || categoryForm.name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 
     const subcats = subcategoryInput.split(',').map(s => {
       const name = s.trim();
@@ -855,13 +857,14 @@ export default function AdminApp() {
 
     const fullPayload = {
       ...categoryForm,
+      id: catId,
       subcategories: subcats
     };
 
     try {
       if (editingCategory) {
-        const updated = await api.updateCategory(categoryForm.id, fullPayload);
-        setCategoriesList(prev => prev.map(c => c.id === categoryForm.id ? updated : c));
+        const updated = await api.updateCategory(catId, fullPayload);
+        setCategoriesList(prev => prev.map(c => c.id === catId ? updated : c));
         showToast('success', 'Category Updated', `Category '${categoryForm.name}' saved.`);
       } else {
         const added = await api.createCategory(fullPayload);
@@ -2468,28 +2471,15 @@ export default function AdminApp() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                          <label style={adminLabelStyle}>Category ID (Slug)</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. beauty"
-                            style={{ ...adminInputStyle, background: editingCategory ? 'rgba(255,255,255,0.02)' : '#000', borderColor: editingCategory ? 'rgba(255,255,255,0.08)' : 'rgba(212,175,55,0.25)' }}
-                            disabled={editingCategory}
-                            value={categoryForm.id}
-                            onChange={(e) => setCategoryForm({ ...categoryForm, id: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <label style={adminLabelStyle}>Category Name</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Beauty"
-                            style={adminInputStyle}
-                            value={categoryForm.name}
-                            onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                          />
-                        </div>
+                      <div>
+                        <label style={adminLabelStyle}>Category Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Designer Ethnic Sarees & Silk Weaves"
+                          style={adminInputStyle}
+                          value={categoryForm.name}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                        />
                       </div>
 
                       <div>
