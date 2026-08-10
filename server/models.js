@@ -32,6 +32,7 @@ const CatalogSchema = new mongoose.Schema(
     pricePerPiece: { type: Number, required: true },
     singlesAvailable: { type: Boolean, default: true },
     singlesPrice: { type: Number },
+    singlesWeight: { type: String, default: '0.8 KG' },
     fabric: { type: String, default: 'Pure Silk' },
     work: { type: String, default: 'Embroidery' },
     length: { type: String, default: '5.5 Mtr' },

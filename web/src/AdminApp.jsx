@@ -2315,9 +2315,15 @@ export default function AdminApp() {
                         </div>
 
                         {productForm.singlesAvailable && (
-                          <div>
-                            <label style={adminLabelStyle}>Single Piece Price (INR)</label>
-                            <input type="number" min="0" style={adminInputStyle} value={productForm.singlesPrice !== undefined ? productForm.singlesPrice : ''} onChange={(e) => setProductForm({ ...productForm, singlesPrice: Math.max(0, Number(e.target.value)) })} />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                              <label style={adminLabelStyle}>Single Piece Price (INR)</label>
+                              <input type="number" min="0" style={adminInputStyle} value={productForm.singlesPrice !== undefined ? productForm.singlesPrice : ''} onChange={(e) => setProductForm({ ...productForm, singlesPrice: Math.max(0, Number(e.target.value)) })} />
+                            </div>
+                            <div>
+                              <label style={adminLabelStyle}>Single Piece Weight</label>
+                              <input type="text" style={adminInputStyle} placeholder="e.g. 0.8 KG / 800 Grams" value={productForm.singlesWeight || ''} onChange={(e) => setProductForm({ ...productForm, singlesWeight: e.target.value })} />
+                            </div>
                           </div>
                         )}
 

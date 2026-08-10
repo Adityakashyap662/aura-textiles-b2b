@@ -2198,8 +2198,14 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Est. Catalog Weight</div>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981' }}>{activeCatalog.catalogWeight}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      {pdpOrderType === 'full_set' ? 'Est. Catalog Weight' : 'Est. Piece Weight'}
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981' }}>
+                      {pdpOrderType === 'full_set'
+                        ? (activeCatalog.catalogWeight || '5.0 KG')
+                        : (activeCatalog.singlesWeight || '0.8 KG')}
+                    </div>
                   </div>
                 </div>
               </div>

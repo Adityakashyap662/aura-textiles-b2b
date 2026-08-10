@@ -788,6 +788,7 @@ app.post('/api/catalogs', async (req, res) => {
       pcsInSet: Number(catalogData.pcsInSet) || 6,
       singlesAvailable: Boolean(catalogData.singlesAvailable),
       singlesPrice: Number(catalogData.singlesPrice) || basePrice + 100,
+      singlesWeight: catalogData.singlesWeight || '0.8 KG',
       fabric: catalogData.fabric || 'Pure Export Quality Silk',
       work: catalogData.work || 'Handcrafted Zari & Resham Embroidery',
       length: catalogData.length || '5.5 Mtr + Blouse Piece',
