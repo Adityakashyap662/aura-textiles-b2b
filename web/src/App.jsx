@@ -244,7 +244,7 @@ export default function App() {
   // ── PLP Filter States ──
   const [plpCategory, setPlpCategory] = useState('all');
   const [plpFabricFilter, setPlpFabricFilter] = useState('all');
-  const [plpPriceFilter, setPlpPriceFilter] = useState(3000);
+  const [plpPriceFilter, setPlpPriceFilter] = useState('all');
   const [plpSinglesOnly, setPlpSinglesOnly] = useState(false);
   const [plpSortOption, setPlpSortOption] = useState('featured');
 
@@ -493,7 +493,9 @@ export default function App() {
       list = list.filter((c) => (c.fabric || '').toLowerCase().includes(plpFabricFilter.toLowerCase()));
     }
 
-    list = list.filter((c) => (c.pricePerPiece || c.price || 0) <= plpPriceFilter);
+    if (plpPriceFilter !== 'all' && typeof plpPriceFilter === 'number') {
+      list = list.filter((c) => (c.pricePerPiece || c.price || 0) <= plpPriceFilter);
+    }
 
     if (plpSinglesOnly) {
       list = list.filter((c) => c.singlesAvailable);
@@ -1864,7 +1866,7 @@ export default function App() {
                   Hot Export <span className="gold-gradient-text">Wholesale Catalogs</span>
                 </h2>
                 <p style={{ color: '#94a3b8', fontSize: '14px' }}>
-                  Featured 8 wholesale catalogs (Click View All for complete 50+ export catalog grid)
+                  Explore complete export catalog collection ({appCatalogs.length} active wholesale catalogs available)
                 </p>
               </div>
 
@@ -1881,7 +1883,7 @@ export default function App() {
                 className="btn-outline-gold"
                 style={{ fontSize: '13px' }}
               >
-                View All Catalogs (50+) <ChevronRight size={16} />
+                View All {appCatalogs.length} Wholesale Catalogs <ChevronRight size={16} />
               </button>
             </div>
 
@@ -2024,6 +2026,31 @@ export default function App() {
       {/* ── B. PRODUCT LISTING PAGE (PLP) ── */}
       {currentScreen === 'plp' && (
         <main style={{ maxWidth: '1280px', margin: '30px auto', padding: '0 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: '800' }}>
+                All <span className="gold-gradient-text">Wholesale Catalogs ({filteredCatalogs.length})</span>
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '13.5px' }}>
+                Showing all {filteredCatalogs.length} active catalogs matching your selected department & preferences.
+              </p>
+            </div>
+            {(plpCategory !== 'all' || plpFabricFilter !== 'all' || plpPriceFilter !== 'all' || searchQuery) && (
+              <button
+                onClick={() => {
+                  setPlpCategory('all');
+                  setPlpFabricFilter('all');
+                  setPlpPriceFilter('all');
+                  setSearchQuery('');
+                }}
+                className="btn-outline-gold"
+                style={{ fontSize: '12px', padding: '6px 14px' }}
+              >
+                Clear All Filters (Show All {appCatalogs.length})
+              </button>
+            )}
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
             {filteredCatalogs.map((catalog) => renderCatalogCard(catalog))}
           </div>
