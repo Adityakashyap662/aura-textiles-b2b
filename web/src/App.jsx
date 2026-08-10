@@ -47,7 +47,7 @@ import {
   Building2
 } from 'lucide-react';
 
-import { wholesaleCatalogs, categories, testimonialReviews } from './data/wholesaleCatalogs';
+import { wholesaleCatalogs, categories as staticCategories, testimonialReviews } from './data/wholesaleCatalogs';
 import { currencies, formatPrice } from './data/currencies';
 import { countries } from '../../src/data/countries';
 import { api } from './utils/api';
@@ -321,13 +321,25 @@ export default function App() {
   const [quoteFieldsData, setQuoteFieldsData] = useState({});
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
 
-  useEffect(() => {
-    api.getQuoteFields().then((fields) => {
-      if (fields && Array.isArray(fields) && fields.length > 0) {
-        setQuoteFields(fields);
+  // Dynamic Department Categories State
+  const [appCategories, setAppCategories] = useState(staticCategories);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const cats = await api.getCategories();
+      if (cats && Array.isArray(cats) && cats.length > 0) {
+        setAppCategories(cats);
       }
-    });
+    } catch (e) {
+      console.warn('Error fetching dynamic categories:', e);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCategories();
+    const interval = setInterval(fetchCategories, 5000);
+    return () => clearInterval(interval);
+  }, [fetchCategories]);
 
   const handleQuoteFormSubmit = async (e) => {
     e.preventDefault();
@@ -1626,18 +1638,20 @@ export default function App() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
-              {categories.filter((c) => c.id !== 'all').map((cat) => (
+              {appCategories.filter((c) => c.id !== 'all').map((cat) => (
                 <div
                   key={cat.id}
                   onClick={() => handleNav('plp', cat.id)}
                   className="catalog-card"
                   style={{ cursor: 'pointer', height: '220px', position: 'relative' }}
                 >
-                  <img src={cat.image} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.55)' }} />
+                  <img src={cat.image || 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=80'} alt={cat.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.55)' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(11,12,16,0.95) 0%, rgba(11,12,16,0.2) 60%)', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                    <span className="badge-pcs" style={{ width: 'fit-content', marginBottom: '8px' }}>{cat.count} Catalogs</span>
+                    <span className="badge-pcs" style={{ width: 'fit-content', marginBottom: '8px' }}>{cat.itemCount || cat.count || '25+'} Catalogs</span>
                     <h3 style={{ fontSize: '19px', fontWeight: '700', color: '#fff' }}>{cat.name}</h3>
-                    <p style={{ fontSize: '12px', color: '#94a3b8' }}>{cat.description}</p>
+                    <p style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      {cat.description || (cat.subcategories || []).map((s) => s.name || s).join(', ') || 'Export Quality'}
+                    </p>
                   </div>
                 </div>
               ))}
