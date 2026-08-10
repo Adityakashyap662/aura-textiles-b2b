@@ -809,6 +809,44 @@ export default function AdminApp() {
     showToast('info', 'Logged Out', 'Your administrative session has ended.');
   };
 
+  // BI-DIRECTIONAL AUTOMATIC PRICING & DISCOUNT CALCULATOR
+  const handlePriceChange = (newPrice) => {
+    const p = Math.max(0, Number(newPrice));
+    const m = Number(productForm.mrp) || 0;
+    let disc = Number(productForm.discount) || 0;
+
+    if (m > 0 && p <= m) {
+      disc = Math.round(((m - p) / m) * 100);
+    }
+    setProductForm((prev) => ({ ...prev, price: p, discount: disc }));
+  };
+
+  const handleMrpChange = (newMrp) => {
+    const m = Math.max(0, Number(newMrp));
+    const p = Number(productForm.price) || 0;
+    let disc = Number(productForm.discount) || 0;
+
+    if (m > 0 && p > 0 && p <= m) {
+      disc = Math.round(((m - p) / m) * 100);
+    } else if (m > 0 && disc > 0) {
+      const calculatedPrice = Math.round(m * (1 - disc / 100));
+      setProductForm((prev) => ({ ...prev, mrp: m, price: calculatedPrice }));
+      return;
+    }
+    setProductForm((prev) => ({ ...prev, mrp: m, discount: disc }));
+  };
+
+  const handleDiscountChange = (newDiscount) => {
+    const disc = Math.max(0, Math.min(100, Number(newDiscount)));
+    const m = Number(productForm.mrp) || 0;
+    let p = Number(productForm.price) || 0;
+
+    if (m > 0) {
+      p = Math.round(m * (1 - disc / 100));
+    }
+    setProductForm((prev) => ({ ...prev, discount: disc, price: p }));
+  };
+
   // PRODUCT CRUD SAVE / DELETE (Connected to Node.js REST API)
   const handleSaveProduct = async () => {
     if (!productForm.title || !productForm.title.trim()) {
@@ -2120,11 +2158,10 @@ export default function AdminApp() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '36px', alignItems: 'start' }}>
                       
-                      {/* Left Column: General & Financials */}
+                      {/* Left Column: General, Multi-Category, Financials & Specifications */}
                       <div style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '36px', display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                        <h4 style={{ fontSize: '13px', fontWeight: '900', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#D4AF37' }}>Product Information</h4>
+                        <h4 style={{ fontSize: '13px', fontWeight: '900', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#D4AF37' }}>Product & Financial Information</h4>
                         
-                        {/* 3. REMOVED PRODUCT ID BOX ON ADD (it is auto generated in server) */}
                         {editingProduct ? (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
                             <div>
@@ -2132,56 +2169,155 @@ export default function AdminApp() {
                               <input type="text" style={{ ...adminInputStyle, background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)' }} disabled value={productForm.id} />
                             </div>
                             <div>
-                              <label style={adminLabelStyle}>Product Title</label>
-                              <input type="text" style={adminInputStyle} value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
+                              <label style={adminLabelStyle}>Product Title / Catalog Name</label>
+                              <input type="text" style={adminInputStyle} placeholder="e.g. Soft Silk 7009 Lichi Silk Jacquard Saree" value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <label style={adminLabelStyle}>Product Title</label>
-                            <input type="text" style={adminInputStyle} value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
+                            <label style={adminLabelStyle}>Product Title / Catalog Name</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. Soft Silk 7009 Lichi Silk Jacquard Saree" value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
                           </div>
                         )}
 
-                        {/* 4. SYMMETRICALLY ALIGNED SELECT AND INPUT FIELDS */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                           <div>
                             <label style={adminLabelStyle}>Brand Name</label>
-                            <input type="text" style={adminInputStyle} value={productForm.brand} onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })} />
+                            <input type="text" style={adminInputStyle} placeholder="e.g. Aura Weaves Noida" value={productForm.brand} onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })} />
                           </div>
                           <div>
-                            <label style={adminLabelStyle}>Catalog Department</label>
-                            <select 
-                              style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }} 
-                              value={productForm.category} 
-                              onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                            <label style={adminLabelStyle}>Catalog SKU</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. AUR-PROD-7457" value={productForm.sku || ''} onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })} />
+                          </div>
+                        </div>
+
+                        {/* SINGLE OR MULTIPLE CATEGORY SELECTION */}
+                        <div>
+                          <label style={adminLabelStyle}>Catalog Departments (Select Single or Multiple Choice)</label>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px', background: '#000', padding: '14px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.25)' }}>
+                            {categoriesList.map((cat) => {
+                              const currentSelected = productForm.categories || [productForm.category];
+                              const isSelected = currentSelected.includes(cat.id);
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  onClick={() => {
+                                    let updated = [...currentSelected];
+                                    if (updated.includes(cat.id)) {
+                                      if (updated.length === 1) return; // Keep at least one category
+                                      updated = updated.filter((id) => id !== cat.id);
+                                    } else {
+                                      updated.push(cat.id);
+                                    }
+                                    setProductForm((prev) => ({
+                                      ...prev,
+                                      category: updated[0],
+                                      categories: updated,
+                                    }));
+                                  }}
+                                  style={{
+                                    padding: '7px 16px',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    border: isSelected ? '1px solid #d4af37' : '1px solid rgba(255,255,255,0.1)',
+                                    background: isSelected ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.03)',
+                                    color: isSelected ? '#d4af37' : '#94a3b8',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    transition: 'all 0.2s',
+                                  }}
+                                >
+                                  {isSelected && <CheckCircle size={14} color="#d4af37" />}
+                                  {cat.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* BI-DIRECTIONAL AUTOMATIC PRICE & DISCOUNT CALCULATOR */}
+                        <div>
+                          <div style={{ fontSize: '11px', color: '#D4AF37', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            ⚡ Auto Price & Discount Calculator
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                            <div>
+                              <label style={adminLabelStyle}>Selling Price (INR)</label>
+                              <input type="number" min="0" style={adminInputStyle} value={productForm.price !== undefined ? productForm.price : ''} onChange={(e) => handlePriceChange(e.target.value)} />
+                            </div>
+                            <div>
+                              <label style={adminLabelStyle}>Original M.R.P. (INR)</label>
+                              <input type="number" min="0" style={adminInputStyle} value={productForm.mrp !== undefined ? productForm.mrp : ''} onChange={(e) => handleMrpChange(e.target.value)} />
+                            </div>
+                            <div>
+                              <label style={adminLabelStyle}>Discount (%)</label>
+                              <input type="number" min="0" max="100" style={adminInputStyle} value={productForm.discount !== undefined ? productForm.discount : ''} onChange={(e) => handleDiscountChange(e.target.value)} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* TECHNICAL PRODUCT SPECIFICATIONS (MATCHING PDP RIGHT SIDE TABLE) */}
+                        <h4 style={{ fontSize: '13px', fontWeight: '900', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#D4AF37', marginTop: '12px' }}>Technical Product Specifications</h4>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                          <div>
+                            <label style={adminLabelStyle}>Fabric Quality</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. Pure Export Quality Silk / Cotton Matty" value={productForm.fabric || ''} onChange={(e) => setProductForm({ ...productForm, fabric: e.target.value })} />
+                          </div>
+                          <div>
+                            <label style={adminLabelStyle}>Work Details</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. Handcrafted Zari & Resham Embroidery" value={productForm.work || ''} onChange={(e) => setProductForm({ ...productForm, work: e.target.value })} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                          <div>
+                            <label style={adminLabelStyle}>Length & Cut</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. 5.5 Mtr + Blouse Piece" value={productForm.length || ''} onChange={(e) => setProductForm({ ...productForm, length: e.target.value })} />
+                          </div>
+                          <div>
+                            <label style={adminLabelStyle}>Catalog Weight</label>
+                            <input type="text" style={adminInputStyle} placeholder="e.g. 5.0 KG" value={productForm.catalogWeight || ''} onChange={(e) => setProductForm({ ...productForm, catalogWeight: e.target.value })} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                          <div>
+                            <label style={adminLabelStyle}>Pieces in Set (Full Catalog)</label>
+                            <input type="number" min="1" style={adminInputStyle} value={productForm.pcsInSet || 6} onChange={(e) => setProductForm({ ...productForm, pcsInSet: Math.max(1, Number(e.target.value)) })} />
+                          </div>
+                          <div>
+                            <label style={adminLabelStyle}>Single Piece Available?</label>
+                            <select
+                              style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }}
+                              value={productForm.singlesAvailable ? 'yes' : 'no'}
+                              onChange={(e) => setProductForm({ ...productForm, singlesAvailable: e.target.value === 'yes' })}
                             >
-                              {categoriesList.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                              ))}
+                              <option value="yes">Yes - Allow Single Piece Purchases</option>
+                              <option value="no">No - Wholesale Full Set Only</option>
                             </select>
                           </div>
                         </div>
 
-                        {/* 5. PREVENT NEGATIVE VALUES USING MIN="0" */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                        {productForm.singlesAvailable && (
                           <div>
-                            <label style={adminLabelStyle}>Selling Price (INR)</label>
-                            <input type="number" min="0" style={adminInputStyle} value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: Math.max(0, Number(e.target.value)) })} />
+                            <label style={adminLabelStyle}>Single Piece Price (INR)</label>
+                            <input type="number" min="0" style={adminInputStyle} value={productForm.singlesPrice !== undefined ? productForm.singlesPrice : ''} onChange={(e) => setProductForm({ ...productForm, singlesPrice: Math.max(0, Number(e.target.value)) })} />
                           </div>
-                          <div>
-                            <label style={adminLabelStyle}>Original M.R.P. (INR)</label>
-                            <input type="number" min="0" style={adminInputStyle} value={productForm.mrp} onChange={(e) => setProductForm({ ...productForm, mrp: Math.max(0, Number(e.target.value)) })} />
-                          </div>
-                          <div>
-                            <label style={adminLabelStyle}>Discount (%)</label>
-                            <input type="number" min="0" max="100" style={adminInputStyle} value={productForm.discount} onChange={(e) => setProductForm({ ...productForm, discount: Math.max(0, Number(e.target.value)) })} />
-                          </div>
+                        )}
+
+                        <div>
+                          <label style={adminLabelStyle}>Dispatch Facility & Address</label>
+                          <input type="text" style={adminInputStyle} value={productForm.dispatchFacility || 'C123, Sector 19C, Near DM Chawnk, Noida Factory Hub'} onChange={(e) => setProductForm({ ...productForm, dispatchFacility: e.target.value })} />
                         </div>
 
                         <div>
                           <label style={adminLabelStyle}>Description / Highlights</label>
-                          <textarea style={{ ...adminInputStyle, height: 'auto', padding: '14px 18px' }} rows="5" value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
+                          <textarea style={{ ...adminInputStyle, height: 'auto', padding: '14px 18px' }} rows="4" value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
                         </div>
 
                         <div>

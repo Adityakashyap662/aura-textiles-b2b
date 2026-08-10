@@ -479,7 +479,7 @@ export default function App() {
     }
 
     if (plpCategory !== 'all') {
-      list = list.filter((c) => c.category === plpCategory);
+      list = list.filter((c) => c.category === plpCategory || (c.categories && Array.isArray(c.categories) && c.categories.includes(plpCategory)));
     }
 
     if (plpFabricFilter !== 'all') {
