@@ -665,6 +665,8 @@ export default function AdminApp() {
       const prods = await api.getCatalogs('INR');
       const ords = await api.getOrders();
       const cats = await api.getCategories();
+      const reqs = await api.getQuoteRequests();
+      const flds = await api.getQuoteFields();
 
       if (ords && ords.length > 0) {
         setOrdersList(ords);
@@ -680,6 +682,12 @@ export default function AdminApp() {
       }
       if (cats && cats.length > 0) {
         setCategoriesList(cats);
+      }
+      if (reqs && Array.isArray(reqs)) {
+        setQuoteRequestsList(reqs);
+      }
+      if (flds && Array.isArray(flds)) {
+        setQuoteFieldsList(flds);
       }
     } catch (e) {
       console.warn('API: Background sync failure', e);
