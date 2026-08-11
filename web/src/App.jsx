@@ -349,15 +349,34 @@ export default function App() {
     }
   }, []);
 
+  const fetchQuoteFields = useCallback(async () => {
+    try {
+      const fields = await api.getQuoteFields();
+      if (fields && Array.isArray(fields) && fields.length > 0) {
+        setQuoteFields(fields.filter((f) => f.active !== false));
+      }
+    } catch (e) {
+      console.warn('Error fetching dynamic quote fields:', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
     fetchCatalogs();
+    fetchQuoteFields();
     const interval = setInterval(() => {
       fetchCategories();
       fetchCatalogs();
+      fetchQuoteFields();
     }, 5000);
     return () => clearInterval(interval);
-  }, [fetchCategories, fetchCatalogs]);
+  }, [fetchCategories, fetchCatalogs, fetchQuoteFields]);
+
+  useEffect(() => {
+    if (b2bQuoteModalVisible) {
+      fetchQuoteFields();
+    }
+  }, [b2bQuoteModalVisible, fetchQuoteFields]);
 
   const handleQuoteFormSubmit = async (e) => {
     e.preventDefault();
