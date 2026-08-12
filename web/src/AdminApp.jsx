@@ -289,14 +289,16 @@ export default function AdminApp() {
   const [bankAccounts, setBankAccounts] = useState(() => {
     try {
       const saved = localStorage.getItem('adminBankAccounts');
-      return saved ? JSON.parse(saved) : defaultBankAccounts;
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : defaultBankAccounts;
     } catch(e) { return defaultBankAccounts; }
   });
 
   const [upiAccounts, setUpiAccounts] = useState(() => {
     try {
       const saved = localStorage.getItem('adminUpiAccounts');
-      return saved ? JSON.parse(saved) : defaultUpiAccounts;
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : defaultUpiAccounts;
     } catch(e) { return defaultUpiAccounts; }
   });
 
@@ -4159,14 +4161,14 @@ export default function AdminApp() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ fontWeight: '700', color: '#FFF' }}>🏛️ Bank Transfer (NEFT / IMPS / RTGS)</span>
                       <span style={{ fontWeight: '800', color: '#10B981' }}>
-                        ₹{paymentAnalytics.totalBankRevenue.toLocaleString('en-IN')} ({paymentAnalytics.bankPercentage}%)
+                        ₹{(paymentAnalytics?.totalBankRevenue || 0).toLocaleString('en-IN')} ({paymentAnalytics?.bankPercentage || '0'}%)
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
-                      {paymentAnalytics.totalBankOrders} Orders Paid via Bank Wire Transfer
+                      {paymentAnalytics?.totalBankOrders || 0} Orders Paid via Bank Wire Transfer
                     </div>
                     <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${paymentAnalytics.bankPercentage}%`, background: '#10B981' }} />
+                      <div style={{ height: '100%', width: `${paymentAnalytics?.bankPercentage || 0}%`, background: '#10B981' }} />
                     </div>
                   </div>
 
@@ -4175,14 +4177,14 @@ export default function AdminApp() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ fontWeight: '700', color: '#FFF' }}>📱 UPI (GPay / PhonePe / Paytm / QR Code)</span>
                       <span style={{ fontWeight: '800', color: '#D4AF37' }}>
-                        ₹{paymentAnalytics.totalUpiRevenue.toLocaleString('en-IN')} ({paymentAnalytics.upiPercentage}%)
+                        ₹{(paymentAnalytics?.totalUpiRevenue || 0).toLocaleString('en-IN')} ({paymentAnalytics?.upiPercentage || '0'}%)
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
-                      {paymentAnalytics.totalUpiOrders} Orders Paid via Instant UPI / QR Scan
+                      {paymentAnalytics?.totalUpiOrders || 0} Orders Paid via Instant UPI / QR Scan
                     </div>
                     <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${paymentAnalytics.upiPercentage}%`, background: '#D4AF37' }} />
+                      <div style={{ height: '100%', width: `${paymentAnalytics?.upiPercentage || 0}%`, background: '#D4AF37' }} />
                     </div>
                   </div>
 
@@ -4195,7 +4197,7 @@ export default function AdminApp() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#D4AF37', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    🏛️ Registered Bank Accounts for Direct Transfers ({bankAccounts.length})
+                    🏛️ Registered Bank Accounts for Direct Transfers ({(bankAccounts || []).length})
                   </h3>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0' }}>
                     Add or manage company bank accounts for NEFT / IMPS / RTGS payments.
@@ -4211,7 +4213,7 @@ export default function AdminApp() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                {bankAccounts.map((b) => (
+                {(bankAccounts || []).map((b) => (
                   <div
                     key={b.id}
                     style={{
@@ -4262,7 +4264,7 @@ export default function AdminApp() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#D4AF37', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    📱 Registered UPI VPA IDs & Scan QR Codes ({upiAccounts.length})
+                    📱 Registered UPI VPA IDs & Scan QR Codes ({(upiAccounts || []).length})
                   </h3>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0' }}>
                     Add or manage UPI Virtual Payment Addresses and device-uploaded QR Code images.
@@ -4278,7 +4280,7 @@ export default function AdminApp() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                {upiAccounts.map((u) => (
+                {(upiAccounts || []).map((u) => (
                   <div
                     key={u.id}
                     style={{
