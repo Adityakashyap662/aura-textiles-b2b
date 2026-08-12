@@ -1792,51 +1792,163 @@ export default function AdminApp() {
         {activeTab === 'dashboard' && (
           <div className="fade-in-up">
             
-            {/* KPI Cards */}
+            {/* KPI Cards (Clickable Navigation Tabs) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-              <div style={{ background: '#0d0d0d', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Card 1: Revenue */}
+              <div
+                onClick={() => {
+                  setActiveTab('revenue');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="Click to view Revenue & Payment Analytics"
+                style={{
+                  background: '#0d0d0d',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(212,175,55,0.25)',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d4af37';
+                  e.currentTarget.style.background = 'rgba(212,175,55,0.06)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)';
+                  e.currentTarget.style.background = '#0d0d0d';
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Platform Revenue</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Platform Revenue</div>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: '#D4AF37', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <RupeeIcon size={20} color="#D4AF37" />
-                    {ordersList.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? o.total : 0), 0).toLocaleString('en-IN')}
+                    {ordersList.reduce((sum, o) => {
+                      if (o.status === 'Cancelled') return sum;
+                      let val = 0;
+                      if (typeof o.total === 'number') val = o.total;
+                      else if (typeof o.totalAmount === 'number') val = o.totalAmount;
+                      else if (typeof o.totalEstimate === 'string') val = parseFloat(o.totalEstimate.replace(/[^0-9.]/g, '')) || 0;
+                      else if (typeof o.total === 'string') val = parseFloat(o.total.replace(/[^0-9.]/g, '')) || 0;
+                      return sum + val;
+                    }, 0).toLocaleString('en-IN')}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px' }}>+18.4% compared to last week</div>
+                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px', fontWeight: '600' }}>+18.4% compared to last week • Click to Manage →</div>
                 </div>
-                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
                   <RupeeIcon size={22} color="#D4AF37" />
                 </div>
               </div>
 
-              <div style={{ background: '#0d0d0d', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Card 2: Orders Processed */}
+              <div
+                onClick={() => {
+                  setActiveTab('orders');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="Click to view Order Management"
+                style={{
+                  background: '#0d0d0d',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d4af37';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.background = '#0d0d0d';
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Orders Processed</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Orders Processed</div>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: '#FFF', marginTop: '6px' }}>{ordersList.length}</div>
-                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px' }}>+12.1% sales expansion</div>
+                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px', fontWeight: '600' }}>+12.1% sales expansion • Click to Manage →</div>
                 </div>
-                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <ShoppingBag size={20} color="#FFF" />
                 </div>
               </div>
 
-              <div style={{ background: '#0d0d0d', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Card 3: Active Catalog */}
+              <div
+                onClick={() => {
+                  setActiveTab('products');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="Click to view Product Management"
+                style={{
+                  background: '#0d0d0d',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d4af37';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.background = '#0d0d0d';
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Active Catalog</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Active Catalog</div>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: '#FFF', marginTop: '6px' }}>{productsList.length}</div>
-                  <div style={{ fontSize: '10px', color: '#FFF', opacity: 0.4, marginTop: '6px' }}>{categoriesList.length} active departments</div>
+                  <div style={{ fontSize: '10px', color: '#d4af37', marginTop: '6px', fontWeight: '600' }}>{categoriesList.length} departments • Click to Manage →</div>
                 </div>
-                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <Sliders size={20} color="#FFF" />
                 </div>
               </div>
 
-              <div style={{ background: '#0d0d0d', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Card 4: Customer Profiles */}
+              <div
+                onClick={() => {
+                  setActiveTab('customers');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                title="Click to view Customer Management"
+                style={{
+                  background: '#0d0d0d',
+                  padding: '20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  justify: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#d4af37';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.background = '#0d0d0d';
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>Customer Profiles</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Customer Profiles</div>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: '#FFF', marginTop: '6px' }}>{usersList.length}</div>
-                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px' }}>+8 Loyalty entries this month</div>
+                  <div style={{ fontSize: '10px', color: '#10B981', marginTop: '6px', fontWeight: '600' }}>+8 Loyalty entries • Click to Manage →</div>
                 </div>
-                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <Users size={20} color="#FFF" />
                 </div>
               </div>
