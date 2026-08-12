@@ -463,8 +463,12 @@ export default function AdminApp() {
       
       let amount = 0;
       if (typeof o.total === 'number' && o.total > 0) amount = o.total;
+      else if (typeof o.totalAmount === 'number' && o.totalAmount > 0) amount = o.totalAmount;
       else if (o.totalEstimate) {
         const cleaned = String(o.totalEstimate).replace(/[^0-9.]/g, '');
+        amount = parseFloat(cleaned) || 0;
+      } else if (o.total) {
+        const cleaned = String(o.total).replace(/[^0-9.]/g, '');
         amount = parseFloat(cleaned) || 0;
       }
 
@@ -4123,21 +4127,21 @@ export default function AdminApp() {
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>Gross Revenue Inflow:</span>
                     <span style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px', color: '#FFF' }}>
                       <RupeeIcon size={16} color="#FFF" />
-                      {ordersList.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? (o.total || 0) : 0), 0).toLocaleString('en-IN')}
+                      {(paymentAnalytics.grandTotal || 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>Cost of Goods Sold (COGS 40%):</span>
                     <span style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: '700' }}>
                       - <RupeeIcon size={16} color="#EF4444" />
-                      {Math.round(ordersList.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? (o.total || 0) : 0), 0) * 0.4).toLocaleString('en-IN')}
+                      {Math.round((paymentAnalytics.grandTotal || 0) * 0.4).toLocaleString('en-IN')}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
                     <span style={{ fontWeight: '800', color: '#FFF' }}>Operating Profit (60%):</span>
                     <span style={{ fontWeight: '900', color: '#10B981', display: 'flex', alignItems: 'center', gap: '2px', fontSize: '16px' }}>
                       <RupeeIcon size={18} color="#10B981" />
-                      {Math.round(ordersList.reduce((sum, o) => sum + (o.status !== 'Cancelled' ? (o.total || 0) : 0), 0) * 0.6).toLocaleString('en-IN')}
+                      {Math.round((paymentAnalytics.grandTotal || 0) * 0.6).toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
