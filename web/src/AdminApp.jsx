@@ -378,7 +378,7 @@ export default function AdminApp() {
   const handleSaveQuoteField = async (e) => {
     e.preventDefault();
     if (!fieldFormData.label.trim()) {
-      alert('Please enter a Field Label.');
+      alert('Please enter a Field Name.');
       return;
     }
 
@@ -387,14 +387,17 @@ export default function AdminApp() {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const generatedKey = fieldFormData.label.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+
     const payload = {
       label: fieldFormData.label.trim(),
+      key: generatedKey,
       type: fieldFormData.type,
       options: optionsArray,
-      required: fieldFormData.required,
-      placeholder: fieldFormData.placeholder.trim(),
-      order: Number(fieldFormData.order) || 1,
-      active: fieldFormData.active,
+      required: Boolean(fieldFormData.required),
+      placeholder: fieldFormData.placeholder ? fieldFormData.placeholder.trim() : `Enter ${fieldFormData.label.trim()}`,
+      order: Number(fieldFormData.order) || (adminQuoteFieldsList.length + 1),
+      active: true,
     };
 
     try {
@@ -4872,21 +4875,27 @@ export default function AdminApp() {
               </h3>
 
               <form onSubmit={handleSaveQuoteField}>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Field Label (e.g. Fabric, Quantity, Colour)</label>
+                {/* 1. NAME */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                    Name <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     className="input-dark"
                     value={fieldFormData.label}
                     onChange={(e) => setFieldFormData((prev) => ({ ...prev, label: e.target.value }))}
-                    placeholder="e.g., Fabric"
+                    placeholder="e.g. Fabric, Quantity, Colour, Printing / Embroidery"
                     style={{ padding: '12px', fontSize: '14px' }}
                   />
                 </div>
 
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Input Type</label>
+                {/* 2. INPUT TYPE */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                    Input Type <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <select
                     className="input-dark"
                     value={fieldFormData.type}
@@ -4901,9 +4910,9 @@ export default function AdminApp() {
                 </div>
 
                 {fieldFormData.type === 'select' && (
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>
-                      Dropdown Select Options <span style={{ color: '#94a3b8', fontWeight: '400' }}>(Comma separated)</span>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                      Select Options <span style={{ color: '#94a3b8', fontWeight: '400' }}>(Comma separated)</span>
                     </label>
                     <input
                       type="text"
@@ -4911,47 +4920,26 @@ export default function AdminApp() {
                       className="input-dark"
                       value={fieldFormData.options}
                       onChange={(e) => setFieldFormData((prev) => ({ ...prev, options: e.target.value }))}
-                      placeholder="e.g. 100% Cotton, Polyester Blend, Heavy Linen"
+                      placeholder="e.g. 100% Cotton, Polyester Blend, Heavy Canvas"
                       style={{ padding: '12px', fontSize: '14px' }}
                     />
                   </div>
                 )}
 
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Placeholder Hint</label>
-                  <input
-                    type="text"
+                {/* 3. REQUIRED FIELD */}
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ fontSize: '12.5px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
+                    Required Field <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
                     className="input-dark"
-                    value={fieldFormData.placeholder}
-                    onChange={(e) => setFieldFormData((prev) => ({ ...prev, placeholder: e.target.value }))}
-                    placeholder="e.g. Select your required fabric type"
-                    style={{ padding: '12px', fontSize: '14px' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '4px', fontWeight: '600' }}>Display Order</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="input-dark"
-                      value={fieldFormData.order}
-                      onChange={(e) => setFieldFormData((prev) => ({ ...prev, order: e.target.value }))}
-                      style={{ padding: '12px', fontSize: '14px' }}
-                    />
-                  </div>
-
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingTop: '20px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={fieldFormData.required}
-                        onChange={(e) => setFieldFormData((prev) => ({ ...prev, required: e.target.checked }))}
-                      />
-                      Required Field?
-                    </label>
-                  </div>
+                    value={fieldFormData.required ? 'yes' : 'no'}
+                    onChange={(e) => setFieldFormData((prev) => ({ ...prev, required: e.target.value === 'yes' }))}
+                    style={{ padding: '12px', fontSize: '14px', background: '#0b0c10', color: '#fff' }}
+                  >
+                    <option value="yes">Yes (Required Field)</option>
+                    <option value="no">No (Optional Field)</option>
+                  </select>
                 </div>
 
                 <button type="submit" className="btn-gold" style={{ width: '100%', padding: '14px', fontWeight: '800' }}>
