@@ -395,10 +395,16 @@ export default function App() {
       });
 
       if (res.success) {
-        showToast('Quote Request Submitted! 🚀', 'Thank you! Our sales team will contact you shortly.', 'success');
+        showToast('Quote Request Submitted! 🚀', 'Saved in Admin Panel & WhatsApp Notification dispatched!', 'success');
         setB2bQuoteModalVisible(false);
         setQuoteFormData({ name: '', phone: '', email: '' });
         setQuoteFieldsData({});
+
+        if (res.whatsappUrl) {
+          try {
+            window.open(res.whatsappUrl, '_blank');
+          } catch(e) {}
+        }
       }
     } catch (err) {
       showToast('Submission Error', err.message, 'error');

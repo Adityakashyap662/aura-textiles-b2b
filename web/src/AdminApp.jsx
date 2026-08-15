@@ -858,13 +858,33 @@ export default function AdminApp() {
 
   // PRODUCT CRUD SAVE / DELETE (Connected to Node.js REST API)
   const handleSaveProduct = async () => {
-    if (!productForm.title || !productForm.title.trim()) {
-      showToast('error', 'Validation Error', 'Product Title is required.');
+    // 1. Mandatory Fields Validation
+    const missingFields = [];
+    if (!productForm.title || !String(productForm.title).trim()) missingFields.push('Product Title');
+    
+    const numericPrice = Number(productForm.price);
+    if (!productForm.price || isNaN(numericPrice) || numericPrice <= 0) missingFields.push('Wholesale Price per Piece (₹)');
+
+    const hasCategory = Boolean(
+      (typeof productForm.category === 'string' && productForm.category.trim()) ||
+      (Array.isArray(productForm.categories) && productForm.categories.length > 0)
+    );
+    if (!hasCategory) missingFields.push('Category / Department');
+
+    const numericPcs = Number(productForm.pcsInSet);
+    if (!productForm.pcsInSet || isNaN(numericPcs) || numericPcs <= 0) missingFields.push('Pieces in Set (Minimum Set Qty)');
+
+    if (missingFields.length > 0) {
+      showToast(
+        'warning',
+        '⚠️ Mandatory Fields Missing',
+        `Please fill out the following required fields before saving: ${missingFields.join(', ')}`
+      );
       return;
     }
 
     const isEditMode = Boolean(editingProduct && typeof editingProduct === 'object' && editingProduct.id);
-    const prodId = isEditMode ? editingProduct.id : (productForm.id || `cat_${Date.now()}`);
+    const prodId = isEditMode ? editingProduct.id : (productForm.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`);
 
     const categoriesArray = Array.isArray(productForm.categories) && productForm.categories.length > 0
       ? productForm.categories
@@ -877,22 +897,25 @@ export default function AdminApp() {
     const payload = {
       ...productForm,
       id: prodId,
-      title: productForm.title.trim(),
+      sku: productForm.sku || `AUR-${Math.floor(100000 + Math.random() * 900000)}`,
+      title: String(productForm.title).trim(),
       category: primaryCategory,
       categories: categoriesArray,
       images: productForm.images && productForm.images.length > 0 ? productForm.images : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'],
       videos: productForm.videos || [],
-      pricePerPiece: Number(productForm.price) || 850,
-      pcsInSet: Number(productForm.pcsInSet) || 6,
+      price: numericPrice,
+      pricePerPiece: numericPrice,
+      mrp: Number(productForm.mrp) || Math.round(numericPrice * 1.5),
+      pcsInSet: numericPcs,
       singlesAvailable: productForm.singlesAvailable !== undefined ? productForm.singlesAvailable : true,
-      singlesPrice: Number(productForm.singlesPrice) || (Number(productForm.price) ? Number(productForm.price) + 100 : 950),
+      singlesPrice: Number(productForm.singlesPrice) || (numericPrice + 100),
     };
 
     try {
       if (isEditMode) {
         const res = await api.updateCatalog(prodId, payload);
         setProductsList(prev => prev.map(p => p.id === prodId ? (res.catalog || res || payload) : p));
-        showToast('success', 'Catalog Updated', `Saved changes for catalog: ${productForm.title}`);
+        showToast('success', 'Catalog Updated 👑', `Saved changes for catalog: ${productForm.title}`);
       } else {
         const res = await api.createCatalog(payload);
         setProductsList(prev => [(res.catalog || res || payload), ...prev]);
@@ -901,7 +924,7 @@ export default function AdminApp() {
       setEditingProduct(null);
       syncDatabase();
     } catch (err) {
-      showToast('error', 'API Save Error', err.message || 'Failed to save product');
+      showToast('warning', 'Save Product Failed', err.message || 'Please check all mandatory fields and try again.');
     }
   };
 

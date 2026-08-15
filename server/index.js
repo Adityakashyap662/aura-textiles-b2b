@@ -780,15 +780,30 @@ app.get('/api/catalogs', async (req, res) => {
 app.post('/api/catalogs', async (req, res) => {
   try {
     const catalogData = req.body;
-    const basePrice = Number(catalogData.price || catalogData.pricePerPiece) || 850;
+
+    // Validate mandatory fields
+    const missingFields = [];
+    if (!catalogData.title || !String(catalogData.title).trim()) missingFields.push('Product Title');
+    const priceVal = Number(catalogData.price || catalogData.pricePerPiece);
+    if (!priceVal || priceVal <= 0) missingFields.push('Wholesale Price per Piece');
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Validation Error: Missing mandatory fields: ${missingFields.join(', ')}`,
+        missingFields,
+      });
+    }
+
+    const basePrice = priceVal || 850;
     const newCatalog = {
-      id: catalogData.id || `cat_${Date.now()}`,
-      sku: catalogData.sku || `AUR-PROD-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: catalogData.title || 'New Wholesale Catalog',
+      id: catalogData.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      sku: catalogData.sku || `AUR-${Math.floor(100000 + Math.random() * 900000)}`,
+      title: String(catalogData.title).trim(),
       brand: catalogData.brand || 'Aura Weaves Noida',
       description: catalogData.description || 'Export quality wholesale apparel',
       category: typeof catalogData.category === 'string' ? catalogData.category : (Array.isArray(catalogData.categories) ? catalogData.categories[0] : 'sarees'),
-      categories: Array.isArray(catalogData.categories) ? catalogData.categories : [catalogData.category || 'sarees'],
+      categories: Array.isArray(catalogData.categories) && catalogData.categories.length > 0 ? catalogData.categories : [catalogData.category || 'sarees'],
       tags: catalogData.tags || ['new-arrival'],
       careInstructions: catalogData.careInstructions || 'Dry clean only',
       highlights: catalogData.highlights || '100% export quality weave',
@@ -825,7 +840,14 @@ app.post('/api/catalogs', async (req, res) => {
 
     res.json({ success: true, message: 'New wholesale catalog added successfully!', catalog: newCatalog });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: `Validation Error: ${errors.join(', ')}` });
+    }
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Catalog with this SKU or ID already exists.' });
+    }
+    res.status(500).json({ success: false, message: err.message || 'Failed to create product' });
   }
 });
 
@@ -844,7 +866,11 @@ app.put('/api/catalogs/:id', async (req, res) => {
       return res.json({ success: true, message: 'Wholesale catalog updated successfully!', catalog: memoryCatalogs[index] });
     }
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: `Validation Error: ${errors.join(', ')}` });
+    }
+    res.status(500).json({ success: false, message: err.message || 'Failed to update product' });
   }
 });
 
@@ -1188,7 +1214,7 @@ app.delete('/api/admin/quotes/fields/:id', async (req, res) => {
   }
 });
 
-// 6. Submit a Quote Request (Website Users)
+// 6. Submit a Quote Request (Website Users) with Automated WhatsApp Notification
 app.post('/api/quotes/request', async (req, res) => {
   try {
     const { name, phone, email, fieldsData } = req.body;
@@ -1207,14 +1233,64 @@ app.post('/api/quotes/request', async (req, res) => {
       createdAt: new Date(),
     };
 
+    // Save to Database / Memory
     if (isMongoConnected) {
       const qReq = new QuoteRequest(newReqData);
       await qReq.save();
-      return res.json({ success: true, message: 'Wholesale Quote Request submitted successfully! Our sales team will contact you shortly.', request: qReq });
+    } else {
+      memoryQuoteRequests.unshift(newReqData);
     }
 
-    memoryQuoteRequests.unshift(newReqData);
-    res.json({ success: true, message: 'Wholesale Quote Request submitted successfully! Our sales team will contact you shortly.', request: newReqData });
+    // Format Automated WhatsApp Message
+    const cleanPhone = phone.replace(/[^0-9+]/g, '');
+    const specsFormatted = Object.entries(fieldsData || {})
+      .map(([k, v]) => `• *${k.toUpperCase()}:* ${v}`)
+      .join('\n');
+
+    const waText = `🚨 *NEW WHOLESALE QUOTE REQUEST!* 🛍️\n\n` +
+      `👤 *Client Name:* ${name}\n` +
+      `📞 *Contact Number:* ${phone}\n` +
+      `✉️ *Email ID:* ${email || 'Not Provided'}\n\n` +
+      `📋 *QUOTATION SPECIFICATIONS:*\n${specsFormatted || 'Standard Catalogue Request'}\n\n` +
+      `📅 *Date:* ${new Date().toLocaleString('en-IN')}\n` +
+      `🌐 *Aura Textiles B2B Export Portal*`;
+
+    // Direct WhatsApp API URL for Instant Chatting
+    const adminPhone = process.env.ADMIN_WHATSAPP_NUMBER || '919820012345';
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(waText)}`;
+    const clientWhatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone.replace('+', '')}&text=${encodeURIComponent(
+      `Hello ${name}, thank you for requesting a Wholesale Quote from Aura Textiles! Our sales team is reviewing your requirements:\n\n${specsFormatted}`
+    )}`;
+
+    console.log(`📱 [Backend WhatsApp Notification Generated for ${name} (${phone})]:`);
+    console.log(waText);
+
+    // If an external WhatsApp Gateway (e.g. UltraMsg / Twilio / WhatsApp Cloud API) is set in .env
+    if (process.env.WHATSAPP_GATEWAY_URL && process.env.WHATSAPP_TOKEN) {
+      try {
+        await fetch(process.env.WHATSAPP_GATEWAY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: process.env.WHATSAPP_TOKEN,
+            to: adminPhone,
+            body: waText,
+          }),
+        });
+        console.log(`🚀 [WhatsApp Automated Gateway Delivery Success to Admin ${adminPhone}]`);
+      } catch (waErr) {
+        console.log(`⚠️ [WhatsApp Gateway API Delivery Warning]: ${waErr.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Wholesale Quote Request submitted successfully! Our team will contact you on WhatsApp shortly.',
+      request: newReqData,
+      whatsappUrl,
+      clientWhatsappUrl,
+      whatsappText: waText,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
