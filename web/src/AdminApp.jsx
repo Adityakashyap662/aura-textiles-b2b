@@ -704,6 +704,11 @@ export default function AdminApp() {
   // ── HOMEPAGE MANAGEMENT HERO BANNER STATES ──
   const [adminHeroBannersList, setAdminHeroBannersList] = useState([]);
   const [editingHeroSlide, setEditingHeroSlide] = useState(null); // null = close modal, false = new, obj = edit
+  const [isSavingHeroSlide, setIsSavingHeroSlide] = useState(false);
+  const [deletingSlideId, setDeletingSlideId] = useState(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState('');
+
   const [heroSlideForm, setHeroSlideForm] = useState({
     id: '',
     subtitle: "WOMEN'S SOFT SILK & LICHI JACQUARD",
@@ -763,12 +768,15 @@ export default function AdminApp() {
   };
 
   const handleSaveHeroSlide = async () => {
+    if (isSavingHeroSlide || isUploadingMedia) return;
+
     if (!heroSlideForm.title || !heroSlideForm.title.trim()) {
       showToast('warning', 'Validation Warning', 'Slide Title is required.');
       return;
     }
 
     try {
+      setIsSavingHeroSlide(true);
       if (editingHeroSlide && editingHeroSlide.id) {
         const updated = await api.updateHomepageBanner(editingHeroSlide.id, heroSlideForm);
         setAdminHeroBannersList(prev => prev.map(b => b.id === editingHeroSlide.id ? (updated.banner || heroSlideForm) : b));
@@ -782,17 +790,24 @@ export default function AdminApp() {
       fetchAdminHeroBanners();
     } catch (err) {
       showToast('error', 'Hero Slide Save Error', err.message || 'Failed to save slide');
+    } finally {
+      setIsSavingHeroSlide(false);
     }
   };
 
   const handleDeleteHeroSlide = async (id) => {
+    if (deletingSlideId === id) return;
     if (!window.confirm(`Are you sure you want to delete Hero Slide ID: ${id}?`)) return;
+
     try {
+      setDeletingSlideId(id);
       await api.deleteHomepageBanner(id);
       setAdminHeroBannersList(prev => prev.filter(b => b.id !== id));
       showToast('success', 'Slide Deleted', `Hero slide ID ${id} removed.`);
     } catch (err) {
       showToast('error', 'Delete Error', err.message);
+    } finally {
+      setDeletingSlideId(null);
     }
   };
 
@@ -4783,8 +4798,33 @@ export default function AdminApp() {
                             <Edit2 size={13} /> Edit
                           </button>
 
-                          <button onClick={() => handleDeleteHeroSlide(slide.id)} style={{ padding: '6px 12px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Trash2 size={13} />
+                          <button
+                            onClick={() => handleDeleteHeroSlide(slide.id)}
+                            disabled={deletingSlideId === slide.id}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'rgba(239,68,68,0.15)',
+                              border: '1px solid #ef4444',
+                              color: '#ef4444',
+                              borderRadius: '6px',
+                              cursor: deletingSlideId === slide.id ? 'not-allowed' : 'pointer',
+                              opacity: deletingSlideId === slide.id ? 0.5 : 1,
+                              fontSize: '11.5px',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            {deletingSlideId === slide.id ? (
+                              <>
+                                <RefreshCw size={13} className="spin-icon" /> Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 size={13} /> Delete
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -5453,23 +5493,41 @@ export default function AdminApp() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const sizeMb = file.size / (1024 * 1024);
-                        if (sizeMb > 25) {
-                          showToast('warning', '⚡ Large Video Warning', `Video is ${sizeMb.toFixed(1)}MB. For fastest site loading, videos under 15MB are recommended.`);
+                        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                        if (file.size / (1024 * 1024) > 25) {
+                          showToast('warning', '⚡ Large Video Warning', `Video is ${sizeMb}MB. For fastest site loading, videos under 15MB are recommended.`);
                         }
+
+                        setIsUploadingMedia(true);
+                        setUploadProgressText(`Uploading Video (${sizeMb} MB)... Please wait`);
+
                         const reader = new FileReader();
+                        reader.onprogress = (ev) => {
+                          if (ev.lengthComputable) {
+                            const percent = Math.round((ev.loaded / ev.total) * 100);
+                            setUploadProgressText(`Uploading Video (${sizeMb} MB)... ${percent}%`);
+                          }
+                        };
                         reader.onload = (ev) => {
                           const dataUrl = ev.target?.result;
                           if (dataUrl) {
                             setHeroSlideForm((prev) => ({ ...prev, video: dataUrl }));
-                            showToast('success', 'Video Attached', `Attached: ${file.name} (${sizeMb.toFixed(1)} MB)`);
+                            showToast('success', 'Video Attached', `Attached: ${file.name} (${sizeMb} MB)`);
                           }
+                          setIsUploadingMedia(false);
+                          setUploadProgressText('');
+                        };
+                        reader.onerror = () => {
+                          showToast('error', 'Upload Error', 'Failed to read video file.');
+                          setIsUploadingMedia(false);
+                          setUploadProgressText('');
                         };
                         reader.readAsDataURL(file);
                       }}
                     />
                     <button
                       type="button"
+                      disabled={isUploadingMedia || isSavingHeroSlide}
                       onClick={() => document.getElementById('hero-video-file-picker')?.click()}
                       style={{
                         background: 'rgba(16, 185, 129, 0.15)',
@@ -5477,7 +5535,8 @@ export default function AdminApp() {
                         color: '#10b981',
                         padding: '4px 10px',
                         borderRadius: '6px',
-                        cursor: 'pointer',
+                        cursor: (isUploadingMedia || isSavingHeroSlide) ? 'not-allowed' : 'pointer',
+                        opacity: (isUploadingMedia || isSavingHeroSlide) ? 0.5 : 1,
                         fontSize: '11px',
                         fontWeight: '700',
                         display: 'flex',
@@ -5538,37 +5597,54 @@ export default function AdminApp() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={adminLabelStyle}>Slide Display Order</label>
-                  <input
-                    type="number"
-                    min="1"
-                    style={adminInputStyle}
-                    value={heroSlideForm.order}
-                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, order: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div>
-                  <label style={adminLabelStyle}>Visibility Status</label>
-                  <select
-                    style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }}
-                    value={heroSlideForm.active ? 'active' : 'hidden'}
-                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, active: e.target.value === 'active' })}
-                  >
-                    <option value="active">🟢 Active (Live on Homepage)</option>
-                    <option value="hidden">🔴 Hidden (Disabled)</option>
-                  </select>
-                </div>
+              <div>
+                <label style={adminLabelStyle}>Visibility Status</label>
+                <select
+                  style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }}
+                  value={heroSlideForm.active ? 'active' : 'hidden'}
+                  onChange={(e) => setHeroSlideForm({ ...heroSlideForm, active: e.target.value === 'active' })}
+                >
+                  <option value="active">🟢 Active (Live on Homepage)</option>
+                  <option value="hidden">🔴 Hidden (Disabled)</option>
+                </select>
               </div>
 
+              {/* PROGRESS / SAVING SPINNER HUD */}
+              {(isUploadingMedia || isSavingHeroSlide) && (
+                <div style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid #d4af37', padding: '14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px', color: '#d4af37', fontSize: '13px', fontWeight: '800' }}>
+                  <RefreshCw size={20} className="spin-icon" color="#d4af37" />
+                  <span>{isUploadingMedia ? uploadProgressText : '⏳ Saving Slide & Publishing to Website... Please wait.'}</span>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
-                <button onClick={() => setEditingHeroSlide(null)} style={adminSecondaryBtnStyle}>
+                <button onClick={() => setEditingHeroSlide(null)} disabled={isSavingHeroSlide || isUploadingMedia} style={adminSecondaryBtnStyle}>
                   Cancel
                 </button>
-                <button onClick={handleSaveHeroSlide} className="btn-gold" style={{ padding: '12px 24px', fontSize: '13.5px', fontWeight: '800' }}>
-                  <CheckCircle size={18} /> Save & Publish Slide
+                <button
+                  onClick={handleSaveHeroSlide}
+                  disabled={isSavingHeroSlide || isUploadingMedia}
+                  className="btn-gold"
+                  style={{
+                    opacity: (isSavingHeroSlide || isUploadingMedia) ? 0.5 : 1,
+                    cursor: (isSavingHeroSlide || isUploadingMedia) ? 'not-allowed' : 'pointer',
+                    padding: '12px 24px',
+                    fontSize: '13.5px',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  {isSavingHeroSlide ? (
+                    <>
+                      <RefreshCw size={18} className="spin-icon" /> Saving Slide...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={18} /> Save & Publish Slide
+                    </>
+                  )}
                 </button>
               </div>
             </div>
