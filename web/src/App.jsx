@@ -312,13 +312,19 @@ export default function App() {
 
   const activeHeroBanners = dynamicHeroBanners.length > 0 ? dynamicHeroBanners : defaultFallbackHeroBanners;
 
-  // Auto-slide hero banner every 4.5 seconds
+  // Auto-slide hero banner: Only image slides timer (4.5s). For video slides, run video complete and transition onEnded!
+  const currentHeroSlide = activeHeroBanners[heroSlideIdx];
+
   useEffect(() => {
+    // If current active slide is a video, do NOT auto-timer transition! The video's onEnded event will handle transition!
+    if (currentHeroSlide?.video) return;
+
     const timer = setInterval(() => {
       setHeroSlideIdx((prev) => (prev + 1) % activeHeroBanners.length);
     }, 4500);
+
     return () => clearInterval(timer);
-  }, [activeHeroBanners.length]);
+  }, [heroSlideIdx, currentHeroSlide?.video, activeHeroBanners.length]);
 
   // Home Hot Export Catalogs Expand State (Initially show 8 products)
   const [showAllHomeCatalogs, setShowAllHomeCatalogs] = useState(false);
@@ -1844,9 +1850,11 @@ export default function App() {
                 poster={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&auto=format&fit=crop&q=75'}
                 preload="metadata"
                 autoPlay
-                loop
                 muted
                 playsInline
+                onEnded={() => {
+                  setHeroSlideIdx((prev) => (prev + 1) % activeHeroBanners.length);
+                }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
               />
             ) : (
