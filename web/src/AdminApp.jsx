@@ -4748,28 +4748,44 @@ export default function AdminApp() {
                 </div>
               ) : (
                 adminHeroBannersList.map((slide, idx) => (
-                  <div key={slide.id} style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                  <div key={slide.id} style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 25px rgba(0,0,0,0.5)' }}>
                     {/* Media Preview Box */}
-                    <div style={{ position: 'relative', height: '180px', background: '#000', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', height: '190px', background: '#000', overflow: 'hidden' }}>
                       {slide.video ? (
-                        <video src={slide.video} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }} />
+                        <video
+                          src={slide.video}
+                          poster={slide.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'}
+                          preload="metadata"
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }}
+                        />
                       ) : (
-                        <img src={slide.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'} alt={slide.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }} />
+                        <img
+                          src={slide.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }}
+                        />
                       )}
 
-                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '6px' }}>
-                        <span style={{ padding: '4px 10px', background: slide.active ? 'rgba(16,185,129,0.9)' : 'rgba(239,68,68,0.9)', color: '#fff', fontSize: '10px', fontWeight: '800', borderRadius: '12px', textTransform: 'uppercase' }}>
-                          {slide.active ? '🟢 Live on Site' : '🔴 Hidden'}
-                        </span>
-                        {slide.video && (
-                          <span style={{ padding: '4px 10px', background: 'rgba(212,175,55,0.9)', color: '#000', fontSize: '10px', fontWeight: '900', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Video size={12} /> Autoplay Video
+                      {/* Top Overlay Badges Bar */}
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)', zIndex: 5 }}>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ padding: '4px 10px', background: slide.active ? 'rgba(16,185,129,0.95)' : 'rgba(239,68,68,0.95)', color: '#fff', fontSize: '10px', fontWeight: '800', borderRadius: '12px', textTransform: 'uppercase', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
+                            {slide.active ? '🟢 Live on Site' : '🔴 Hidden'}
                           </span>
-                        )}
-                      </div>
+                          {slide.video && (
+                            <span style={{ padding: '4px 10px', background: 'rgba(212,175,55,0.95)', color: '#000', fontSize: '10px', fontWeight: '900', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
+                              <Video size={12} /> Autoplay Video
+                            </span>
+                          )}
+                        </div>
 
-                      <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.7)', color: '#d4af37', fontSize: '11px', fontWeight: '800', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.4)' }}>
-                        Slide #{slide.order || idx + 1}
+                        <div style={{ background: 'rgba(0,0,0,0.85)', color: '#d4af37', fontSize: '11px', fontWeight: '800', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.4)', backdropFilter: 'blur(4px)' }}>
+                          Slide #{slide.order || idx + 1}
+                        </div>
                       </div>
                     </div>
 
@@ -4787,20 +4803,20 @@ export default function AdminApp() {
                         {slide.desc}
                       </p>
 
-                      <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <LinkIcon size={12} /> Target: <code style={{ color: '#fff', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px' }}>{slide.targetUrl || 'all'}</code>
+                      <div style={{ marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <LinkIcon size={12} /> Target: <code style={{ color: '#fff', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>{slide.targetUrl || 'all'}</code>
                         </div>
 
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleOpenHeroModal(slide)} style={{ padding: '6px 12px', background: 'rgba(212,175,55,0.15)', border: '1px solid #d4af37', color: '#d4af37', borderRadius: '6px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <button onClick={() => handleOpenHeroModal(slide)} style={{ padding: '6px 14px', background: 'rgba(212,175,55,0.15)', border: '1px solid #d4af37', color: '#d4af37', borderRadius: '6px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Edit2 size={13} /> Edit
                           </button>
 
                           <button
                             onClick={() => setSlideToDelete(slide)}
                             style={{
-                              padding: '6px 12px',
+                              padding: '6px 14px',
                               background: 'rgba(239,68,68,0.15)',
                               border: '1px solid #ef4444',
                               color: '#ef4444',
