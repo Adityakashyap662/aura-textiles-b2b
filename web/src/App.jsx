@@ -143,8 +143,22 @@ export default function App() {
   }, [currentScreen, isFactorySlidePaused, normalizedFactoryMedia.length]);
   const [activeCurrency, setActiveCurrency] = useState('INR');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState(['cat_saree_001', 'cat_lehenga_001']);
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const saved = localStorage.getItem('userWishlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('userWishlist', JSON.stringify(wishlist));
+    } catch (e) {
+      console.warn('Failed to save wishlist to localStorage', e);
+    }
+  }, [wishlist]);
 
   // ── Auth & Profile State ──
   const [currentUser, setCurrentUser] = useState(null); // { name, email, phone, boutiqueName, address, city, country, pincode }
