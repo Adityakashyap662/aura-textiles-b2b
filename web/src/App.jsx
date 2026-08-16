@@ -1841,6 +1841,8 @@ export default function App() {
               <video
                 key={activeHeroBanners[heroSlideIdx].video}
                 src={activeHeroBanners[heroSlideIdx].video}
+                poster={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&auto=format&fit=crop&q=75'}
+                preload="metadata"
                 autoPlay
                 loop
                 muted
@@ -1851,6 +1853,8 @@ export default function App() {
               <img
                 src={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80'}
                 alt={activeHeroBanners[heroSlideIdx]?.title}
+                loading="eager"
+                decoding="async"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
               />
             )}

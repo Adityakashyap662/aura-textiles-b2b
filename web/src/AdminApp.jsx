@@ -47,6 +47,46 @@ const RupeeIcon = ({ size = 20, color = "#D4AF37" }) => (
 );
 
 // Premium Styling Constants for Admin Forms
+// High-performance client-side image canvas compressor to prevent website slowdowns
+const compressImageFile = (file, maxWidth = 1600, quality = 0.82) => {
+  return new Promise((resolve) => {
+    if (!file.type || !file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => {
+      const reader2 = new FileReader();
+      reader2.onload = (e) => resolve(e.target.result);
+      reader2.readAsDataURL(file);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const adminInputStyle = {
   width: '100%',
   height: '50px',
@@ -5347,18 +5387,13 @@ export default function AdminApp() {
                       accept="image/*"
                       id="hero-image-file-picker"
                       style={{ display: 'none' }}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const dataUrl = ev.target?.result;
-                          if (dataUrl) {
-                            setHeroSlideForm((prev) => ({ ...prev, image: dataUrl }));
-                            showToast('success', 'Image Loaded from Device', `Attached: ${file.name}`);
-                          }
-                        };
-                        reader.readAsDataURL(file);
+                        showToast('info', 'Optimizing Image...', 'Compressing image for ultra-fast website loading');
+                        const compressedDataUrl = await compressImageFile(file, 1600, 0.82);
+                        setHeroSlideForm((prev) => ({ ...prev, image: compressedDataUrl }));
+                        showToast('success', 'Image Optimized & Attached', `Compressed ${file.name} for instant site loading`);
                       }}
                     />
                     <button
@@ -5393,7 +5428,7 @@ export default function AdminApp() {
                   {heroSlideForm.image && (
                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                       <span style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle size={13} /> Image Attached {heroSlideForm.image.startsWith('data:') ? '(From Device)' : '(Via URL)'}
+                        <CheckCircle size={13} /> Image Attached {heroSlideForm.image.startsWith('data:') ? '(From Device - Compressed)' : '(Via URL)'}
                       </span>
                       <button
                         type="button"
@@ -5418,12 +5453,16 @@ export default function AdminApp() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        const sizeMb = file.size / (1024 * 1024);
+                        if (sizeMb > 25) {
+                          showToast('warning', '⚡ Large Video Warning', `Video is ${sizeMb.toFixed(1)}MB. For fastest site loading, videos under 15MB are recommended.`);
+                        }
                         const reader = new FileReader();
                         reader.onload = (ev) => {
                           const dataUrl = ev.target?.result;
                           if (dataUrl) {
                             setHeroSlideForm((prev) => ({ ...prev, video: dataUrl }));
-                            showToast('success', 'Video Loaded from Device', `Attached video: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+                            showToast('success', 'Video Attached', `Attached: ${file.name} (${sizeMb.toFixed(1)} MB)`);
                           }
                         };
                         reader.readAsDataURL(file);
