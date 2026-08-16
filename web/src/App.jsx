@@ -146,19 +146,23 @@ export default function App() {
   const [wishlist, setWishlist] = useState(() => {
     try {
       const saved = localStorage.getItem('userWishlist');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }
   });
 
+  const safeWishlist = Array.isArray(wishlist) ? wishlist : [];
+
   useEffect(() => {
     try {
-      localStorage.setItem('userWishlist', JSON.stringify(wishlist));
+      localStorage.setItem('userWishlist', JSON.stringify(safeWishlist));
     } catch (e) {
       console.warn('Failed to save wishlist to localStorage', e);
     }
-  }, [wishlist]);
+  }, [safeWishlist]);
 
   // ── Auth & Profile State ──
   const [currentUser, setCurrentUser] = useState(null); // { name, email, phone, boutiqueName, address, city, country, pincode }
