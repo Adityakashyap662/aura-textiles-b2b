@@ -704,6 +704,7 @@ export default function AdminApp() {
   // ── HOMEPAGE MANAGEMENT HERO BANNER STATES ──
   const [adminHeroBannersList, setAdminHeroBannersList] = useState([]);
   const [editingHeroSlide, setEditingHeroSlide] = useState(null); // null = close modal, false = new, obj = edit
+  const [slideToDelete, setSlideToDelete] = useState(null); // null = close, obj = confirm delete modal
   const [isSavingHeroSlide, setIsSavingHeroSlide] = useState(false);
   const [deletingSlideId, setDeletingSlideId] = useState(null);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -795,20 +796,18 @@ export default function AdminApp() {
     }
   };
 
-  const handleDeleteHeroSlide = async (id) => {
-    if (deletingSlideId === id) return;
-    if (!window.confirm(`Are you sure you want to delete Hero Slide ID: ${id}?`)) return;
+  const confirmDeleteHeroSlide = (id) => {
+    const targetSlide = slideToDelete;
+    
+    // Instant (0ms) local UI removal
+    setAdminHeroBannersList(prev => prev.filter(b => b.id !== id));
+    setSlideToDelete(null);
+    showToast('success', 'Slide Deleted', `Removed '${targetSlide?.title || id}' from homepage.`);
 
-    try {
-      setDeletingSlideId(id);
-      await api.deleteHomepageBanner(id);
-      setAdminHeroBannersList(prev => prev.filter(b => b.id !== id));
-      showToast('success', 'Slide Deleted', `Hero slide ID ${id} removed.`);
-    } catch (err) {
-      showToast('error', 'Delete Error', err.message);
-    } finally {
-      setDeletingSlideId(null);
-    }
+    // Non-blocking background server sync
+    api.deleteHomepageBanner(id).catch(err => {
+      console.warn('Background slide delete error:', err);
+    });
   };
 
   // Toast Notifications
@@ -4799,16 +4798,14 @@ export default function AdminApp() {
                           </button>
 
                           <button
-                            onClick={() => handleDeleteHeroSlide(slide.id)}
-                            disabled={deletingSlideId === slide.id}
+                            onClick={() => setSlideToDelete(slide)}
                             style={{
                               padding: '6px 12px',
                               background: 'rgba(239,68,68,0.15)',
                               border: '1px solid #ef4444',
                               color: '#ef4444',
                               borderRadius: '6px',
-                              cursor: deletingSlideId === slide.id ? 'not-allowed' : 'pointer',
-                              opacity: deletingSlideId === slide.id ? 0.5 : 1,
+                              cursor: 'pointer',
                               fontSize: '11.5px',
                               fontWeight: '700',
                               display: 'flex',
@@ -4816,15 +4813,7 @@ export default function AdminApp() {
                               gap: '4px',
                             }}
                           >
-                            {deletingSlideId === slide.id ? (
-                              <>
-                                <RefreshCw size={13} className="spin-icon" /> Deleting...
-                              </>
-                            ) : (
-                              <>
-                                <Trash2 size={13} /> Delete
-                              </>
-                            )}
+                            <Trash2 size={13} /> Delete
                           </button>
                         </div>
                       </div>
@@ -5645,6 +5634,87 @@ export default function AdminApp() {
                       <CheckCircle size={18} /> Save & Publish Slide
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CUSTOM DELETE CONFIRMATION MODAL */}
+        {slideToDelete && (
+          <div className="modal-overlay" style={{ zIndex: 100000 }}>
+            <div
+              style={{
+                background: '#0d0d0d',
+                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                borderRadius: '16px',
+                padding: '30px',
+                maxWidth: '440px',
+                width: '100%',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.95), 0 0 30px rgba(239,68,68,0.2)',
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid #ef4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto',
+                }}
+              >
+                <Trash2 size={28} color="#ef4444" />
+              </div>
+
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#fff', marginBottom: '8px' }}>
+                Confirm Slide Deletion
+              </h2>
+
+              <p style={{ fontSize: '13.5px', color: '#cbd5e1', lineHeight: '1.5', marginBottom: '24px' }}>
+                Are you sure you want to delete <strong style={{ color: '#d4af37' }}>"{slideToDelete.title || 'Selected Slide'}"</strong>? This will instantly remove it from the homepage.
+              </p>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setSlideToDelete(null)}
+                  style={{
+                    ...adminSecondaryBtnStyle,
+                    padding: '12px 24px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    flex: 1,
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => confirmDeleteHeroSlide(slideToDelete.id)}
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 24px',
+                    fontSize: '13px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
+                  }}
+                >
+                  <Trash2 size={16} /> Yes, Delete Slide
                 </button>
               </div>
             </div>
