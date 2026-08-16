@@ -1869,7 +1869,7 @@ export default function App() {
                 onEnded={() => {
                   setHeroSlideIdx((prev) => (prev + 1) % activeHeroBanners.length);
                 }}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.75)', transition: 'all 0.6s ease' }}
               />
             ) : (
               <img
@@ -1877,14 +1877,14 @@ export default function App() {
                 alt={activeHeroBanners[heroSlideIdx]?.title}
                 loading="eager"
                 decoding="async"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.75)', transition: 'all 0.6s ease' }}
               />
             )}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'linear-gradient(180deg, rgba(11,12,16,0.2) 0%, rgba(11,12,16,0.95) 100%)',
+                background: 'linear-gradient(180deg, rgba(11,12,16,0.1) 0%, rgba(11,12,16,0.55) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0 40px',
@@ -1894,10 +1894,10 @@ export default function App() {
                 <span className="badge-pcs" style={{ marginBottom: '16px', display: 'inline-block' }}>
                   {activeHeroBanners[heroSlideIdx]?.subtitle || "WOMEN'S WHOLESALE EXCLUSIVES"}
                 </span>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: '800', lineHeight: '1.15', marginBottom: '16px', maxWidth: '750px', color: '#fff' }}>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: '800', lineHeight: '1.15', marginBottom: '16px', maxWidth: '750px', color: '#fff', textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>
                   {activeHeroBanners[heroSlideIdx]?.title}
                 </h1>
-                <p style={{ fontSize: '16px', color: '#cbd5e1', maxWidth: '650px', marginBottom: '28px' }}>
+                <p style={{ fontSize: '16px', color: '#cbd5e1', maxWidth: '650px', marginBottom: '28px', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
                   {activeHeroBanners[heroSlideIdx]?.desc}
                 </p>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
