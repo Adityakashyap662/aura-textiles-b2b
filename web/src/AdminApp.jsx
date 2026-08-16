@@ -758,7 +758,7 @@ export default function AdminApp() {
         subtitle: "WOMEN'S WHOLESALE EXCLUSIVES",
         title: '',
         desc: '',
-        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80',
+        image: '',
         video: '',
         ctaText: 'Explore Collection',
         targetUrl: 'sarees',
