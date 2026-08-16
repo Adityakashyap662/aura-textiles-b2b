@@ -5423,158 +5423,176 @@ export default function AdminApp() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                {/* 1. BACKGROUND IMAGE UPLOADER */}
+                {/* 1. BACKGROUND IMAGE DEVICE UPLOADER */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
-                    <label style={adminLabelStyle}>Background Image</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id="hero-image-file-picker"
-                      style={{ display: 'none' }}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        showToast('info', 'Optimizing Image...', 'Compressing image for ultra-fast website loading');
-                        const compressedDataUrl = await compressImageFile(file, 1600, 0.82);
-                        setHeroSlideForm((prev) => ({ ...prev, image: compressedDataUrl }));
-                        showToast('success', 'Image Optimized & Attached', `Compressed ${file.name} for instant site loading`);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('hero-image-file-picker')?.click()}
-                      style={{
-                        background: 'rgba(212, 175, 55, 0.15)',
-                        border: '1px solid #d4af37',
-                        color: '#d4af37',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <Image size={13} /> 🖼️ Device File
-                    </button>
-                  </div>
-
+                  <label style={adminLabelStyle}>Background Image (Upload from Device)</label>
                   <input
-                    type="text"
-                    style={adminInputStyle}
-                    placeholder="Or paste image URL e.g. https://..."
-                    value={heroSlideForm.image.startsWith('data:') ? '🖼️ Device Image Attached (Base64)' : heroSlideForm.image}
-                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, image: e.target.value })}
+                    type="file"
+                    accept="image/*"
+                    id="hero-image-file-picker"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      showToast('info', 'Optimizing Image...', 'Compressing image for ultra-fast website loading');
+                      const compressedDataUrl = await compressImageFile(file, 1600, 0.82);
+                      setHeroSlideForm((prev) => ({ ...prev, image: compressedDataUrl }));
+                      showToast('success', 'Image Uploaded & Attached', `Compressed ${file.name} for instant site loading`);
+                    }}
                   />
 
-                  {heroSlideForm.image && (
-                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle size={13} /> Image Attached {heroSlideForm.image.startsWith('data:') ? '(From Device - Compressed)' : '(Via URL)'}
-                      </span>
+                  <div style={{ marginTop: '6px' }}>
+                    {heroSlideForm.image ? (
+                      <div style={{ position: 'relative', height: '110px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #d4af37' }}>
+                        <img src={heroSlideForm.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '10px' }}>
+                          <span style={{ fontSize: '11px', color: '#d4af37', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle size={13} /> Image Attached
+                          </span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById('hero-image-file-picker')?.click()}
+                              style={{ background: 'rgba(212,175,55,0.9)', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                              Change
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHeroSlideForm((prev) => ({ ...prev, image: '' }))}
+                              style={{ background: 'rgba(239,68,68,0.9)', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setHeroSlideForm((prev) => ({ ...prev, image: '' }))}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                        onClick={() => document.getElementById('hero-image-file-picker')?.click()}
+                        style={{
+                          width: '100%',
+                          height: '110px',
+                          background: 'rgba(212,175,55,0.05)',
+                          border: '1.5px dashed #d4af37',
+                          borderRadius: '10px',
+                          color: '#d4af37',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.25s ease',
+                        }}
                       >
-                        Remove
+                        <Image size={24} />
+                        <span style={{ fontSize: '12px', fontWeight: '800' }}>🖼️ Upload Image from Device</span>
+                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>Supports JPG, PNG, WEBP from your Mac / Phone</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
-                {/* 2. AUTOPLAY BACKGROUND VIDEO UPLOADER */}
+                {/* 2. AUTOPLAY BACKGROUND VIDEO DEVICE UPLOADER */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
-                    <label style={adminLabelStyle}>Autoplay Background Video (.mp4)</label>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      id="hero-video-file-picker"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-                        if (file.size / (1024 * 1024) > 25) {
-                          showToast('warning', '⚡ Large Video Warning', `Video is ${sizeMb}MB. For fastest site loading, videos under 15MB are recommended.`);
-                        }
-
-                        setIsUploadingMedia(true);
-                        setUploadProgressText(`Uploading Video (${sizeMb} MB)... Please wait`);
-
-                        const reader = new FileReader();
-                        reader.onprogress = (ev) => {
-                          if (ev.lengthComputable) {
-                            const percent = Math.round((ev.loaded / ev.total) * 100);
-                            setUploadProgressText(`Uploading Video (${sizeMb} MB)... ${percent}%`);
-                          }
-                        };
-                        reader.onload = (ev) => {
-                          const dataUrl = ev.target?.result;
-                          if (dataUrl) {
-                            setHeroSlideForm((prev) => ({ ...prev, video: dataUrl }));
-                            showToast('success', 'Video Attached', `Attached: ${file.name} (${sizeMb} MB)`);
-                          }
-                          setIsUploadingMedia(false);
-                          setUploadProgressText('');
-                        };
-                        reader.onerror = () => {
-                          showToast('error', 'Upload Error', 'Failed to read video file.');
-                          setIsUploadingMedia(false);
-                          setUploadProgressText('');
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      disabled={isUploadingMedia || isSavingHeroSlide}
-                      onClick={() => document.getElementById('hero-video-file-picker')?.click()}
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        border: '1px solid #10b981',
-                        color: '#10b981',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        cursor: (isUploadingMedia || isSavingHeroSlide) ? 'not-allowed' : 'pointer',
-                        opacity: (isUploadingMedia || isSavingHeroSlide) ? 0.5 : 1,
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <Video size={13} /> 📁 Upload Video from Device
-                    </button>
-                  </div>
-
+                  <label style={adminLabelStyle}>Autoplay Background Video (Upload from Device)</label>
                   <input
-                    type="text"
-                    style={adminInputStyle}
-                    placeholder="Or paste video URL e.g. https://...mp4"
-                    value={heroSlideForm.video.startsWith('data:') ? '🎥 Device Video Attached (Base64)' : heroSlideForm.video}
-                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, video: e.target.value })}
+                    type="file"
+                    accept="video/*"
+                    id="hero-video-file-picker"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                      if (file.size / (1024 * 1024) > 25) {
+                        showToast('warning', '⚡ Large Video Warning', `Video is ${sizeMb}MB. Videos under 15MB are recommended for fastest loading.`);
+                      }
+
+                      setIsUploadingMedia(true);
+                      setUploadProgressText(`Uploading Video (${sizeMb} MB)... Please wait`);
+
+                      const reader = new FileReader();
+                      reader.onprogress = (ev) => {
+                        if (ev.lengthComputable) {
+                          const percent = Math.round((ev.loaded / ev.total) * 100);
+                          setUploadProgressText(`Uploading Video (${sizeMb} MB)... ${percent}%`);
+                        }
+                      };
+                      reader.onload = (ev) => {
+                        const dataUrl = ev.target?.result;
+                        if (dataUrl) {
+                          setHeroSlideForm((prev) => ({ ...prev, video: dataUrl }));
+                          showToast('success', 'Video Uploaded & Attached', `Attached: ${file.name} (${sizeMb} MB)`);
+                        }
+                        setIsUploadingMedia(false);
+                        setUploadProgressText('');
+                      };
+                      reader.onerror = () => {
+                        showToast('error', 'Upload Error', 'Failed to read video file.');
+                        setIsUploadingMedia(false);
+                        setUploadProgressText('');
+                      };
+                      reader.readAsDataURL(file);
+                    }}
                   />
 
-                  {heroSlideForm.video && (
-                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle size={13} /> Video Attached {heroSlideForm.video.startsWith('data:') ? '(From Device)' : '(Via URL)'}
-                      </span>
+                  <div style={{ marginTop: '6px' }}>
+                    {heroSlideForm.video ? (
+                      <div style={{ position: 'relative', height: '110px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #10b981' }}>
+                        <video src={heroSlideForm.video} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '10px' }}>
+                          <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle size={13} /> Video Attached
+                          </span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById('hero-video-file-picker')?.click()}
+                              style={{ background: 'rgba(16,185,129,0.9)', color: '#000', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                              Change
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setHeroSlideForm((prev) => ({ ...prev, video: '' }))}
+                              style={{ background: 'rgba(239,68,68,0.9)', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setHeroSlideForm((prev) => ({ ...prev, video: '' }))}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                        disabled={isUploadingMedia || isSavingHeroSlide}
+                        onClick={() => document.getElementById('hero-video-file-picker')?.click()}
+                        style={{
+                          width: '100%',
+                          height: '110px',
+                          background: 'rgba(16,185,129,0.05)',
+                          border: '1.5px dashed #10b981',
+                          borderRadius: '10px',
+                          color: '#10b981',
+                          cursor: (isUploadingMedia || isSavingHeroSlide) ? 'not-allowed' : 'pointer',
+                          opacity: (isUploadingMedia || isSavingHeroSlide) ? 0.5 : 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.25s ease',
+                        }}
                       >
-                        Remove
+                        <Video size={24} />
+                        <span style={{ fontSize: '12px', fontWeight: '800' }}>📁 Upload Video from Device</span>
+                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>Supports MP4, MOV video clips from your device</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
