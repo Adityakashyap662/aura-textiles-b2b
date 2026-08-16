@@ -126,7 +126,7 @@ export default function App() {
       return noidaFactoryData.galleryMedia;
     }
     if (noidaFactoryData?.galleryImages && Array.isArray(noidaFactoryData.galleryImages)) {
-      return noidaFactoryData.galleryImages.map(img => typeof img === 'string' ? { type: 'image', url: img, name: 'HD Factory Photo' } : img);
+      return noidaFactoryData.galleryImages.map(img => typeof img === 'string' ? { type: 'image', url: img, name: 'Factory Photo' } : img);
     }
     return [
       { type: 'image', url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80", name: 'Weaving Unit' },
@@ -263,49 +263,62 @@ export default function App() {
     notes: 'Standard lining attached.',
   });
 
-  // ── Hero Banner Carousel State (4 Banners) ──
+  // ── Hero Banner Carousel State ──
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
-  const heroBanners = useMemo(
+  const [dynamicHeroBanners, setDynamicHeroBanners] = useState([]);
+
+  const defaultFallbackHeroBanners = useMemo(
     () => [
       {
         subtitle: "WOMEN'S SOFT SILK & LICHI JACQUARD",
         title: "Soft Silk 7009 Lichi Silk Jacquard Saree Collection",
         desc: "Rich Lichi silk jacquard weaving with pure gold zari borders and contrast pallu direct from Noida factory.",
         image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80",
-        catId: "sarees"
+        video: "https://assets.mixkit.co/videos/preview/mixkit-fashion-model-walking-on-a-catwalk-41221-large.mp4",
+        ctaText: "Explore Collection",
+        targetUrl: "sarees",
       },
       {
-        subtitle: "MEN'S LUXURY ETHNIC EXPORT",
-        title: "Textured Velvet Wedding Sherwanis",
-        desc: "Handcrafted Men's Sherwanis, Silk Kurta Pyjamas & Indo-Western Sets direct from Noida factory looms.",
-        image: "https://images.unsplash.com/photo-1593032465175-481ac7f401a0?w=1600&auto=format&fit=crop&q=80",
-        catId: "men_sherwanis"
+        subtitle: "EXCLUSIVES FOR LEHENGA BOUTIQUES",
+        title: "Bridal Zari & Sequin Embroidery Lehenga Choli Sets",
+        desc: "Export grade velvet and raw silk bridal lehenga catalogs ready for immediate bulk dispatch.",
+        image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=1600&auto=format&fit=crop&q=80",
+        video: "",
+        ctaText: "View Lehengas",
+        targetUrl: "lehengas",
       },
-      {
-        subtitle: "ROYAL BRIDAL COLLECTION",
-        title: "Heavy Zardozi Velvet Lehenga Cholis",
-        desc: "Flared wedding lehengas decorated with handwork zardozi, dori embroidery, and double dupattas.",
-        image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=1600&auto=format&fit=crop&q=80",
-        catId: "lehengas"
-      },
-      {
-        subtitle: "DESIGNER SUITS & ANARKALIS",
-        title: "Heavily Flared Georgette Anarkalis",
-        desc: "Straight cut Punjabi silk suits and flared Anarkalis for boutique export worldwide.",
-        image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=1600&auto=format&fit=crop&q=80",
-        catId: "salwar_suits"
-      }
     ],
     []
   );
 
+  const fetchHeroBanners = useCallback(async () => {
+    try {
+      const banners = await api.getHomepageBanners();
+      if (Array.isArray(banners) && banners.length > 0) {
+        setDynamicHeroBanners(banners);
+      }
+    } catch (e) {
+      console.warn('Error fetching homepage hero banners:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHeroBanners();
+    const interval = setInterval(() => {
+      fetchHeroBanners();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchHeroBanners]);
+
+  const activeHeroBanners = dynamicHeroBanners.length > 0 ? dynamicHeroBanners : defaultFallbackHeroBanners;
+
   // Auto-slide hero banner every 4.5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setHeroSlideIdx((prev) => (prev + 1) % heroBanners.length);
+      setHeroSlideIdx((prev) => (prev + 1) % activeHeroBanners.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [heroBanners.length]);
+  }, [activeHeroBanners.length]);
 
   // Home Hot Export Catalogs Expand State (Initially show 8 products)
   const [showAllHomeCatalogs, setShowAllHomeCatalogs] = useState(false);
@@ -1822,13 +1835,25 @@ export default function App() {
       {/* ── A. HOMEPAGE VIEW ── */}
       {currentScreen === 'home' && (
         <main>
-          {/* Multiple Hero Banners Carousel */}
-          <section style={{ position: 'relative', height: '460px', overflow: 'hidden' }}>
-            <img
-              src={heroBanners[heroSlideIdx].image}
-              alt={heroBanners[heroSlideIdx].title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
-            />
+          {/* Multiple Hero Banners Carousel with Video & Image Support */}
+          <section style={{ position: 'relative', height: '480px', overflow: 'hidden' }}>
+            {activeHeroBanners[heroSlideIdx]?.video ? (
+              <video
+                key={activeHeroBanners[heroSlideIdx].video}
+                src={activeHeroBanners[heroSlideIdx].video}
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
+              />
+            ) : (
+              <img
+                src={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80'}
+                alt={activeHeroBanners[heroSlideIdx]?.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)', transition: 'all 0.6s ease' }}
+              />
+            )}
             <div
               style={{
                 position: 'absolute',
@@ -1841,17 +1866,30 @@ export default function App() {
             >
               <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
                 <span className="badge-pcs" style={{ marginBottom: '16px', display: 'inline-block' }}>
-                  {heroBanners[heroSlideIdx].subtitle}
+                  {activeHeroBanners[heroSlideIdx]?.subtitle || "WOMEN'S WHOLESALE EXCLUSIVES"}
                 </span>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: '800', lineHeight: '1.15', marginBottom: '16px', maxWidth: '750px' }}>
-                  {heroBanners[heroSlideIdx].title}
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: '800', lineHeight: '1.15', marginBottom: '16px', maxWidth: '750px', color: '#fff' }}>
+                  {activeHeroBanners[heroSlideIdx]?.title}
                 </h1>
                 <p style={{ fontSize: '16px', color: '#cbd5e1', maxWidth: '650px', marginBottom: '28px' }}>
-                  {heroBanners[heroSlideIdx].desc}
+                  {activeHeroBanners[heroSlideIdx]?.desc}
                 </p>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                  <button onClick={() => handleNav('plp', heroBanners[heroSlideIdx].catId)} className="btn-gold">
-                    Explore Collection <ChevronRight size={18} />
+                  <button
+                    onClick={() => {
+                      const target = activeHeroBanners[heroSlideIdx]?.targetUrl || activeHeroBanners[heroSlideIdx]?.catId || 'all';
+                      if (target.startsWith('http://') || target.startsWith('https://')) {
+                        window.open(target, '_blank');
+                      } else if (target.startsWith('/catalog/')) {
+                        const prodId = target.replace('/catalog/', '');
+                        handleNav('pdp', prodId);
+                      } else {
+                        handleNav('plp', target.replace('/category/', ''));
+                      }
+                    }}
+                    className="btn-gold"
+                  >
+                    {activeHeroBanners[heroSlideIdx]?.ctaText || 'Explore Collection'} <ChevronRight size={18} />
                   </button>
                 </div>
               </div>
@@ -2565,10 +2603,10 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#d4af37', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    📸 Factory & Production Unit HD Gallery & Video Showcase
+                    📸 Factory & Production Unit Gallery & Video Showcase
                   </h2>
                   <p style={{ color: '#94a3b8', fontSize: '12px', margin: '4px 0 0 0' }}>
-                    Auto-sliding high-definition production plant photos and live weaving video clips.
+                    Auto-sliding production plant photos and live weaving video clips.
                   </p>
                 </div>
               </div>

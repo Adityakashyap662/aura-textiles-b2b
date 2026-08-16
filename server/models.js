@@ -138,6 +138,23 @@ const CategorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── 9. HOMEPAGE HERO BANNER SCHEMA ──
+const HeroBannerSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    subtitle: { type: String, default: "WOMEN'S SOFT SILK & LICHI JACQUARD" },
+    title: { type: String, required: true },
+    desc: { type: String, default: '' },
+    image: { type: String, default: '' },
+    video: { type: String, default: '' },
+    ctaText: { type: String, default: 'Explore Collection' },
+    targetUrl: { type: String, default: 'all' },
+    order: { type: Number, default: 1 },
+    active: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
 const User = mongoose.model('User', UserSchema);
 const Catalog = mongoose.model('Catalog', CatalogSchema);
 const Order = mongoose.model('Order', OrderSchema);
@@ -146,6 +163,7 @@ const Content = mongoose.model('Content', ContentSchema);
 const QuoteField = mongoose.model('QuoteField', QuoteFieldSchema);
 const QuoteRequest = mongoose.model('QuoteRequest', QuoteRequestSchema);
 const Category = mongoose.model('Category', CategorySchema);
+const HeroBanner = mongoose.model('HeroBanner', HeroBannerSchema);
 
 module.exports = {
   User,
@@ -156,4 +174,5 @@ module.exports = {
   QuoteField,
   QuoteRequest,
   Category,
+  HeroBanner,
 };

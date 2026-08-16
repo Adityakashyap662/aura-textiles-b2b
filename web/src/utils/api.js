@@ -348,4 +348,58 @@ export const api = {
     if (!res.ok) throw new Error(data.message || 'Deleting quote request failed');
     return data;
   },
+
+  // ── HOMEPAGE HERO BANNER APIS ──
+  getHomepageBanners: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/homepage/banners`);
+      const data = await res.json();
+      return data.banners || [];
+    } catch (e) {
+      console.warn('API getHomepageBanners Error:', e);
+      return [];
+    }
+  },
+
+  getAdminHomepageBanners: async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/admin/homepage/banners`);
+      const data = await res.json();
+      return data.banners || [];
+    } catch (e) {
+      console.warn('API getAdminHomepageBanners Error:', e);
+      return [];
+    }
+  },
+
+  createHomepageBanner: async (bannerData) => {
+    const res = await fetch(`${BASE_URL}/admin/homepage/banners`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bannerData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Creating homepage banner failed');
+    return data;
+  },
+
+  updateHomepageBanner: async (id, bannerData) => {
+    const res = await fetch(`${BASE_URL}/admin/homepage/banners/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bannerData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Updating homepage banner failed');
+    return data;
+  },
+
+  deleteHomepageBanner: async (id) => {
+    const res = await fetch(`${BASE_URL}/admin/homepage/banners/${id}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Deleting homepage banner failed');
+    return data;
+  },
 };

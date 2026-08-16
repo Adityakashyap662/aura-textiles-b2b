@@ -32,6 +32,10 @@ import {
   ChevronUp,
   HelpCircle,
   MessageCircle,
+  Home,
+  Video,
+  Image,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { api } from './utils/api';
 
@@ -655,6 +659,101 @@ export default function AdminApp() {
     localStorage.setItem('adminNoidaFactory', JSON.stringify(current));
     await api.saveContent('noida-factory', current);
     showToast('success', 'Noida Factory & About Updated', 'Factory details saved and live on website!');
+  };
+
+  // ── HOMEPAGE MANAGEMENT HERO BANNER STATES ──
+  const [adminHeroBannersList, setAdminHeroBannersList] = useState([]);
+  const [editingHeroSlide, setEditingHeroSlide] = useState(null); // null = close modal, false = new, obj = edit
+  const [heroSlideForm, setHeroSlideForm] = useState({
+    id: '',
+    subtitle: "WOMEN'S SOFT SILK & LICHI JACQUARD",
+    title: '',
+    desc: '',
+    image: '',
+    video: '',
+    ctaText: 'Explore Collection',
+    targetUrl: 'sarees',
+    order: 1,
+    active: true,
+  });
+
+  const fetchAdminHeroBanners = useCallback(async () => {
+    try {
+      const banners = await api.getAdminHomepageBanners();
+      setAdminHeroBannersList(banners);
+    } catch (e) {
+      console.warn('Failed to fetch admin hero banners:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdminHeroBanners();
+  }, [fetchAdminHeroBanners]);
+
+  const handleOpenHeroModal = (slideObj = null) => {
+    if (slideObj) {
+      setEditingHeroSlide(slideObj);
+      setHeroSlideForm({
+        id: slideObj.id || '',
+        subtitle: slideObj.subtitle || '',
+        title: slideObj.title || '',
+        desc: slideObj.desc || '',
+        image: slideObj.image || '',
+        video: slideObj.video || '',
+        ctaText: slideObj.ctaText || 'Explore Collection',
+        targetUrl: slideObj.targetUrl || 'all',
+        order: slideObj.order || 1,
+        active: slideObj.active !== undefined ? slideObj.active : true,
+      });
+    } else {
+      setEditingHeroSlide(false);
+      setHeroSlideForm({
+        id: `slide_${Date.now()}`,
+        subtitle: "WOMEN'S WHOLESALE EXCLUSIVES",
+        title: '',
+        desc: '',
+        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80',
+        video: '',
+        ctaText: 'Explore Collection',
+        targetUrl: 'sarees',
+        order: adminHeroBannersList.length + 1,
+        active: true,
+      });
+    }
+  };
+
+  const handleSaveHeroSlide = async () => {
+    if (!heroSlideForm.title || !heroSlideForm.title.trim()) {
+      showToast('warning', 'Validation Warning', 'Slide Title is required.');
+      return;
+    }
+
+    try {
+      if (editingHeroSlide && editingHeroSlide.id) {
+        const updated = await api.updateHomepageBanner(editingHeroSlide.id, heroSlideForm);
+        setAdminHeroBannersList(prev => prev.map(b => b.id === editingHeroSlide.id ? (updated.banner || heroSlideForm) : b));
+        showToast('success', 'Hero Slide Updated', `Saved changes for '${heroSlideForm.title}'`);
+      } else {
+        const added = await api.createHomepageBanner(heroSlideForm);
+        setAdminHeroBannersList(prev => [...prev, added.banner || heroSlideForm]);
+        showToast('success', 'Hero Slide Created', `Added new homepage hero slide: '${heroSlideForm.title}'`);
+      }
+      setEditingHeroSlide(null);
+      fetchAdminHeroBanners();
+    } catch (err) {
+      showToast('error', 'Hero Slide Save Error', err.message || 'Failed to save slide');
+    }
+  };
+
+  const handleDeleteHeroSlide = async (id) => {
+    if (!window.confirm(`Are you sure you want to delete Hero Slide ID: ${id}?`)) return;
+    try {
+      await api.deleteHomepageBanner(id);
+      setAdminHeroBannersList(prev => prev.filter(b => b.id !== id));
+      showToast('success', 'Slide Deleted', `Hero slide ID ${id} removed.`);
+    } catch (err) {
+      showToast('error', 'Delete Error', err.message);
+    }
   };
 
   // Toast Notifications
@@ -1695,6 +1794,7 @@ export default function AdminApp() {
         <nav style={{ flex: 1, padding: '20px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {[
             { id: 'dashboard', name: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+            { id: 'homepage_mgmt', name: 'Homepage Management', icon: <Home size={18} /> },
             { id: 'products', name: 'Product Management', icon: <ShoppingBag size={18} /> },
             { id: 'orders', name: 'Order Management', icon: <Sliders size={18} /> },
             { id: 'get_quotes', name: 'Get Wholesale Quote', icon: <HelpCircle size={18} /> },
@@ -2380,13 +2480,17 @@ export default function AdminApp() {
                               <input type="text" style={{ ...adminInputStyle, background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)' }} disabled value={productForm.id} />
                             </div>
                             <div>
-                              <label style={adminLabelStyle}>Product Title / Catalog Name</label>
+                              <label style={adminLabelStyle}>
+                                Product Title / Catalog Name <span style={{ color: '#ef4444' }}>*</span>
+                              </label>
                               <input type="text" style={adminInputStyle} placeholder="e.g. Soft Silk 7009 Lichi Silk Jacquard Saree" value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <label style={adminLabelStyle}>Product Title / Catalog Name</label>
+                            <label style={adminLabelStyle}>
+                              Product Title / Catalog Name <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
                             <input type="text" style={adminInputStyle} placeholder="e.g. Soft Silk 7009 Lichi Silk Jacquard Saree" value={productForm.title} onChange={(e) => setProductForm({ ...productForm, title: e.target.value })} />
                           </div>
                         )}
@@ -2404,7 +2508,9 @@ export default function AdminApp() {
 
                         {/* SINGLE OR MULTIPLE CATEGORY SELECTION */}
                         <div>
-                          <label style={adminLabelStyle}>Catalog Departments (Select Single or Multiple Choice)</label>
+                          <label style={adminLabelStyle}>
+                            Catalog Departments (Select Single or Multiple Choice) <span style={{ color: '#ef4444' }}>*</span>
+                          </label>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px', background: '#000', padding: '14px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.25)' }}>
                             {categoriesList.map((cat) => {
                               const currentSelected = productForm.categories || [productForm.category];
@@ -2457,7 +2563,9 @@ export default function AdminApp() {
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                             <div>
-                              <label style={adminLabelStyle}>Selling Price (INR)</label>
+                              <label style={adminLabelStyle}>
+                                Selling Price (INR) <span style={{ color: '#ef4444' }}>*</span>
+                              </label>
                               <input type="number" min="0" style={adminInputStyle} value={productForm.price !== undefined ? productForm.price : ''} onChange={(e) => handlePriceChange(e.target.value)} />
                             </div>
                             <div>
@@ -2498,7 +2606,9 @@ export default function AdminApp() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                           <div>
-                            <label style={adminLabelStyle}>Pieces in Set (Full Catalog)</label>
+                            <label style={adminLabelStyle}>
+                              Pieces in Set (Full Catalog) <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
                             <input type="number" min="1" style={adminInputStyle} value={productForm.pcsInSet || 6} onChange={(e) => setProductForm({ ...productForm, pcsInSet: Math.max(1, Number(e.target.value)) })} />
                           </div>
                           <div>
@@ -4558,6 +4668,94 @@ export default function AdminApp() {
           </div>
         )}
 
+        {/* HOMEPAGE MANAGEMENT TAB (HERO BANNER CAROUSEL & VIDEO MANAGEMENT) */}
+        {activeTab === 'homepage_mgmt' && (
+          <div className="fade-in-up">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Home size={26} color="#d4af37" /> Homepage Hero Carousel & Video Management
+                </h1>
+                <p style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
+                  Manage homepage hero slides, title headlines, background images, autoplay videos, and explore button URLs.
+                </p>
+              </div>
+
+              <button onClick={() => handleOpenHeroModal(null)} className="btn-gold" style={{ padding: '12px 24px', fontSize: '13.5px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={18} /> Create New Hero Slide
+              </button>
+            </div>
+
+            {/* Live Banner Slides Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+              {adminHeroBannersList.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', background: '#0a0a0a', padding: '50px', textAlign: 'center', color: '#64748b', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                  No homepage hero slides created yet. Click "Create New Hero Slide" to add one!
+                </div>
+              ) : (
+                adminHeroBannersList.map((slide, idx) => (
+                  <div key={slide.id} style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                    {/* Media Preview Box */}
+                    <div style={{ position: 'relative', height: '180px', background: '#000', overflow: 'hidden' }}>
+                      {slide.video ? (
+                        <video src={slide.video} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }} />
+                      ) : (
+                        <img src={slide.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1000&auto=format&fit=crop&q=80'} alt={slide.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.6)' }} />
+                      )}
+
+                      <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '6px' }}>
+                        <span style={{ padding: '4px 10px', background: slide.active ? 'rgba(16,185,129,0.9)' : 'rgba(239,68,68,0.9)', color: '#fff', fontSize: '10px', fontWeight: '800', borderRadius: '12px', textTransform: 'uppercase' }}>
+                          {slide.active ? '🟢 Live on Site' : '🔴 Hidden'}
+                        </span>
+                        {slide.video && (
+                          <span style={{ padding: '4px 10px', background: 'rgba(212,175,55,0.9)', color: '#000', fontSize: '10px', fontWeight: '900', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Video size={12} /> Autoplay Video
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.7)', color: '#d4af37', fontSize: '11px', fontWeight: '800', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.4)' }}>
+                        Slide #{slide.order || idx + 1}
+                      </div>
+                    </div>
+
+                    {/* Content Details Box */}
+                    <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#d4af37', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        {slide.subtitle || 'HERO SUBTITLE / BADGE'}
+                      </div>
+
+                      <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#fff', lineHeight: '1.3' }}>
+                        {slide.title}
+                      </h3>
+
+                      <p style={{ fontSize: '12px', color: '#94a3b8', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {slide.desc}
+                      </p>
+
+                      <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <LinkIcon size={12} /> Target: <code style={{ color: '#fff', background: 'rgba(255,255,255,0.06)', padding: '2px 6px', borderRadius: '4px' }}>{slide.targetUrl || 'all'}</code>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleOpenHeroModal(slide)} style={{ padding: '6px 12px', background: 'rgba(212,175,55,0.15)', border: '1px solid #d4af37', color: '#d4af37', borderRadius: '6px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Edit2 size={13} /> Edit
+                          </button>
+
+                          <button onClick={() => handleDeleteHeroSlide(slide.id)} style={{ padding: '6px 12px', background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', cursor: 'pointer', fontSize: '11.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 10. NOIDA FACTORY & ABOUT US MODULE */}
         {activeTab === 'noida_factory' && (
           <div className="fade-in-up">
@@ -4733,15 +4931,15 @@ export default function AdminApp() {
                 </div>
               </div>
 
-              {/* Gallery HD Photos & Videos Upload (Native Device File Picker) */}
+              {/* Gallery Photos & Videos Upload (Native Device File Picker) */}
               <div style={{ background: '#000', padding: '18px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <label style={{ fontSize: '14px', color: '#D4AF37', fontWeight: '800' }}>
-                      📸 Factory & Production Unit HD Photos & Videos Gallery ({normalizeFactoryMedia(noidaFactoryForm).length} Items)
+                      📸 Factory & Production Unit Photos & Videos Gallery ({normalizeFactoryMedia(noidaFactoryForm).length} Items)
                     </label>
                     <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0 0' }}>
-                      Upload multiple high-definition photos and MP4 video clips directly from your device.
+                      Upload multiple photos and MP4 video clips directly from your device.
                     </p>
                   </div>
                   <input
@@ -4766,7 +4964,7 @@ export default function AdminApp() {
                             newItems.push({
                               type: isVideo ? 'video' : 'image',
                               url: url,
-                              name: file.name || (isVideo ? 'HD Factory Video' : 'HD Factory Photo'),
+                              name: file.name || (isVideo ? 'Factory Video' : 'Factory Photo'),
                             });
                           }
                           processedCount++;
@@ -4778,7 +4976,7 @@ export default function AdminApp() {
                               galleryMedia: updated,
                               galleryImages: updated.map(m => m.url),
                             });
-                            showToast('success', 'Media Uploaded', `Added ${newItems.length} HD photos/videos from device.`);
+                            showToast('success', 'Media Uploaded', `Added ${newItems.length} photos/videos from device.`);
                           }
                         };
                         reader.readAsDataURL(file);
@@ -4790,7 +4988,7 @@ export default function AdminApp() {
                     onClick={() => document.getElementById('admin-factory-media-input')?.click()}
                     style={{ ...adminBtnStyle, width: 'auto', background: 'rgba(16,185,129,0.2)', borderColor: '#10b981', color: '#10b981' }}
                   >
-                    📂 Upload Multiple HD Photos & Videos
+                    📂 Upload Multiple Photos & Videos
                   </button>
                 </div>
 
@@ -4804,7 +5002,7 @@ export default function AdminApp() {
                       )}
                       
                       <span style={{ position: 'absolute', bottom: '6px', left: '6px', background: item.type === 'video' ? 'rgba(16,185,129,0.9)' : 'rgba(212,175,55,0.9)', color: '#000', fontSize: '10px', fontWeight: '800', padding: '2px 8px', borderRadius: '10px' }}>
-                        {item.type === 'video' ? '🎥 HD Video' : '📷 HD Photo'}
+                        {item.type === 'video' ? '🎥 Video' : '📷 Photo'}
                       </span>
 
                       <button
@@ -5087,6 +5285,253 @@ export default function AdminApp() {
                   {editingFieldItem ? 'Save Field Changes' : 'Create Custom Field 🚀'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* HOMEPAGE HERO BANNER EDIT/CREATE MODAL */}
+        {editingHeroSlide !== null && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div className="fade-in-up" style={{ background: '#0d0d0d', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '16px', maxWidth: '650px', width: '100%', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#d4af37', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Home size={22} /> {editingHeroSlide ? 'Edit Homepage Hero Slide' : 'Create New Homepage Hero Slide'}
+                </h3>
+                <button onClick={() => setEditingHeroSlide(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div>
+                <label style={adminLabelStyle}>
+                  Slide Main Headline / Title <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  style={adminInputStyle}
+                  placeholder="e.g. Soft Silk 7009 Lichi Silk Jacquard Saree Collection"
+                  value={heroSlideForm.title}
+                  onChange={(e) => setHeroSlideForm({ ...heroSlideForm, title: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={adminLabelStyle}>Category Badge / Subtitle</label>
+                <input
+                  type="text"
+                  style={adminInputStyle}
+                  placeholder="e.g. WOMEN'S SOFT SILK & LICHI JACQUARD"
+                  value={heroSlideForm.subtitle}
+                  onChange={(e) => setHeroSlideForm({ ...heroSlideForm, subtitle: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={adminLabelStyle}>Description Text</label>
+                <textarea
+                  rows="3"
+                  style={{ ...adminInputStyle, height: 'auto', padding: '12px' }}
+                  placeholder="e.g. Rich Lichi silk jacquard weaving with pure gold zari borders direct from Noida factory."
+                  value={heroSlideForm.desc}
+                  onChange={(e) => setHeroSlideForm({ ...heroSlideForm, desc: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* 1. BACKGROUND IMAGE UPLOADER */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+                    <label style={adminLabelStyle}>Background Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="hero-image-file-picker"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result;
+                          if (dataUrl) {
+                            setHeroSlideForm((prev) => ({ ...prev, image: dataUrl }));
+                            showToast('success', 'Image Loaded from Device', `Attached: ${file.name}`);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('hero-image-file-picker')?.click()}
+                      style={{
+                        background: 'rgba(212, 175, 55, 0.15)',
+                        border: '1px solid #d4af37',
+                        color: '#d4af37',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Image size={13} /> 🖼️ Device File
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    style={adminInputStyle}
+                    placeholder="Or paste image URL e.g. https://..."
+                    value={heroSlideForm.image.startsWith('data:') ? '🖼️ Device Image Attached (Base64)' : heroSlideForm.image}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, image: e.target.value })}
+                  />
+
+                  {heroSlideForm.image && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ fontSize: '11px', color: '#d4af37', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CheckCircle size={13} /> Image Attached {heroSlideForm.image.startsWith('data:') ? '(From Device)' : '(Via URL)'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setHeroSlideForm((prev) => ({ ...prev, image: '' }))}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. AUTOPLAY BACKGROUND VIDEO UPLOADER */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+                    <label style={adminLabelStyle}>Autoplay Background Video (.mp4)</label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      id="hero-video-file-picker"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const dataUrl = ev.target?.result;
+                          if (dataUrl) {
+                            setHeroSlideForm((prev) => ({ ...prev, video: dataUrl }));
+                            showToast('success', 'Video Loaded from Device', `Attached video: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('hero-video-file-picker')?.click()}
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.15)',
+                        border: '1px solid #10b981',
+                        color: '#10b981',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Video size={13} /> 📁 Upload Video from Device
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    style={adminInputStyle}
+                    placeholder="Or paste video URL e.g. https://...mp4"
+                    value={heroSlideForm.video.startsWith('data:') ? '🎥 Device Video Attached (Base64)' : heroSlideForm.video}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, video: e.target.value })}
+                  />
+
+                  {heroSlideForm.video && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CheckCircle size={13} /> Video Attached {heroSlideForm.video.startsWith('data:') ? '(From Device)' : '(Via URL)'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setHeroSlideForm((prev) => ({ ...prev, video: '' }))}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={adminLabelStyle}>CTA Button Text</label>
+                  <input
+                    type="text"
+                    style={adminInputStyle}
+                    placeholder="e.g. Explore Collection / View Lehengas"
+                    value={heroSlideForm.ctaText}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, ctaText: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Target Page URL / Category Key</label>
+                  <input
+                    type="text"
+                    style={adminInputStyle}
+                    placeholder="e.g. sarees, lehengas, /catalog/cat_123, or https://..."
+                    value={heroSlideForm.targetUrl}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, targetUrl: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={adminLabelStyle}>Slide Display Order</label>
+                  <input
+                    type="number"
+                    min="1"
+                    style={adminInputStyle}
+                    value={heroSlideForm.order}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, order: Number(e.target.value) })}
+                  />
+                </div>
+
+                <div>
+                  <label style={adminLabelStyle}>Visibility Status</label>
+                  <select
+                    style={{ ...adminInputStyle, height: '50px', cursor: 'pointer' }}
+                    value={heroSlideForm.active ? 'active' : 'hidden'}
+                    onChange={(e) => setHeroSlideForm({ ...heroSlideForm, active: e.target.value === 'active' })}
+                  >
+                    <option value="active">🟢 Active (Live on Homepage)</option>
+                    <option value="hidden">🔴 Hidden (Disabled)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '12px' }}>
+                <button onClick={() => setEditingHeroSlide(null)} style={adminSecondaryBtnStyle}>
+                  Cancel
+                </button>
+                <button onClick={handleSaveHeroSlide} className="btn-gold" style={{ padding: '12px 24px', fontSize: '13.5px', fontWeight: '800' }}>
+                  <CheckCircle size={18} /> Save & Publish Slide
+                </button>
+              </div>
             </div>
           </div>
         )}

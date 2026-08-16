@@ -6,7 +6,7 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { BrevoClient } = require('@getbrevo/brevo');
 const mongoose = require('mongoose');
-const { User, Catalog, Order, Otp, QuoteField, QuoteRequest, Category } = require('./models');
+const { User, Catalog, Order, Otp, QuoteField, QuoteRequest, Category, HeroBanner } = require('./models');
 const { defaultQuoteFields, defaultQuoteRequests, categories: initialCategoriesSeed, products: initialCatalogsSeed } = require('./memoryDb');
 
 const app = express();
@@ -14,7 +14,8 @@ const PORT = process.env.PORT || 5050;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/aura_textiles_b2b';
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 // ── AUTOMATED GITHUB DEPLOYMENT WEBHOOK ──
 app.post('/api/deploy-webhook', (req, res) => {
@@ -1343,6 +1344,139 @@ app.delete('/api/admin/quotes/requests/:id', async (req, res) => {
     }
     memoryQuoteRequests = memoryQuoteRequests.filter((r) => r.id !== id);
     res.json({ success: true, message: 'Quote request deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── 10. HOMEPAGE HERO BANNER ENDPOINTS ──
+const defaultHeroBanners = [
+  {
+    id: 'slide_1',
+    subtitle: "WOMEN'S SOFT SILK & LICHI JACQUARD",
+    title: "Soft Silk 7009 Lichi Silk Jacquard Saree Collection",
+    desc: "Rich Lichi silk jacquard weaving with pure gold zari borders and contrast pallu direct from Noida factory.",
+    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80",
+    video: "https://assets.mixkit.co/videos/preview/mixkit-fashion-model-walking-on-a-catwalk-41221-large.mp4",
+    ctaText: "Explore Collection",
+    targetUrl: "sarees",
+    order: 1,
+    active: true,
+  },
+  {
+    id: 'slide_2',
+    subtitle: "EXCLUSIVES FOR LEHENGA BOUTIQUES",
+    title: "Bridal Zari & Sequin Embroidery Lehenga Choli Sets",
+    desc: "Export grade velvet and raw silk bridal lehenga catalogs ready for immediate bulk dispatch.",
+    image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=1600&auto=format&fit=crop&q=80",
+    video: "",
+    ctaText: "View Lehengas",
+    targetUrl: "lehengas",
+    order: 2,
+    active: true,
+  },
+];
+
+let memoryHeroBanners = [...defaultHeroBanners];
+
+// 10.1 Get Active Homepage Hero Banners (Public Storefront)
+app.get('/api/homepage/banners', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      let banners = await HeroBanner.find({ active: true }).sort({ order: 1 });
+      if (banners.length === 0) {
+        await HeroBanner.insertMany(defaultHeroBanners);
+        banners = await HeroBanner.find({ active: true }).sort({ order: 1 });
+      }
+      return res.json({ success: true, banners });
+    }
+    res.json({ success: true, banners: memoryHeroBanners.filter(b => b.active) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 10.2 Get ALL Hero Banners (Admin View)
+app.get('/api/admin/homepage/banners', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      let banners = await HeroBanner.find().sort({ order: 1 });
+      if (banners.length === 0) {
+        await HeroBanner.insertMany(defaultHeroBanners);
+        banners = await HeroBanner.find().sort({ order: 1 });
+      }
+      return res.json({ success: true, banners });
+    }
+    res.json({ success: true, banners: memoryHeroBanners });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 10.3 Create Hero Banner Slide (Admin)
+app.post('/api/admin/homepage/banners', async (req, res) => {
+  try {
+    const bannerData = req.body;
+    if (!bannerData.title || !String(bannerData.title).trim()) {
+      return res.status(400).json({ success: false, message: 'Slide Title is required.' });
+    }
+
+    const slideId = bannerData.id || `slide_${Date.now()}`;
+    const newSlide = {
+      id: slideId,
+      subtitle: bannerData.subtitle || "WOMEN'S WHOLESALE EXCLUSIVES",
+      title: String(bannerData.title).trim(),
+      desc: bannerData.desc || '',
+      image: bannerData.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80',
+      video: bannerData.video || '',
+      ctaText: bannerData.ctaText || 'Explore Collection',
+      targetUrl: bannerData.targetUrl || 'all',
+      order: Number(bannerData.order) || 1,
+      active: bannerData.active !== undefined ? Boolean(bannerData.active) : true,
+    };
+
+    if (isMongoConnected) {
+      const banner = new HeroBanner(newSlide);
+      await banner.save();
+      return res.json({ success: true, message: 'Homepage Hero Slide created successfully!', banner });
+    }
+
+    memoryHeroBanners.push(newSlide);
+    res.json({ success: true, message: 'Homepage Hero Slide created successfully!', banner: newSlide });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 10.4 Update Hero Banner Slide (Admin)
+app.put('/api/admin/homepage/banners/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      const updated = await HeroBanner.findOneAndUpdate({ id }, req.body, { new: true }).lean();
+      if (!updated) return res.status(404).json({ success: false, message: 'Hero Slide not found.' });
+      return res.json({ success: true, message: 'Homepage Hero Slide updated successfully!', banner: updated });
+    }
+
+    const index = memoryHeroBanners.findIndex((b) => b.id === id);
+    if (index === -1) return res.status(404).json({ success: false, message: 'Hero Slide not found.' });
+    memoryHeroBanners[index] = { ...memoryHeroBanners[index], ...req.body };
+    res.json({ success: true, message: 'Homepage Hero Slide updated successfully!', banner: memoryHeroBanners[index] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 10.5 Delete Hero Banner Slide (Admin)
+app.delete('/api/admin/homepage/banners/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (isMongoConnected) {
+      await HeroBanner.deleteOne({ id });
+      return res.json({ success: true, message: 'Hero Slide deleted successfully!' });
+    }
+    memoryHeroBanners = memoryHeroBanners.filter((b) => b.id !== id);
+    res.json({ success: true, message: 'Hero Slide deleted successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
