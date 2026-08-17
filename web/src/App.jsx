@@ -147,6 +147,17 @@ export default function App() {
   }, [currentScreen, isFactorySlidePaused, normalizedFactoryMedia.length]);
   const [activeCurrency, setActiveCurrency] = useState('INR');
   const [searchQuery, setSearchQuery] = useState('');
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('userCart');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const [wishlist, setWishlist] = useState(() => {
     try {
       const saved = localStorage.getItem('userWishlist');
@@ -159,6 +170,7 @@ export default function App() {
   });
 
   const safeWishlist = Array.isArray(wishlist) ? wishlist : [];
+  const safeCart = Array.isArray(cart) ? cart : [];
 
   useEffect(() => {
     try {
@@ -167,6 +179,14 @@ export default function App() {
       console.warn('Failed to save wishlist to localStorage', e);
     }
   }, [safeWishlist]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('userCart', JSON.stringify(safeCart));
+    } catch (e) {
+      console.warn('Failed to save cart to localStorage', e);
+    }
+  }, [safeCart]);
 
   // ── Auth & Profile State ──
   const [currentUser, setCurrentUser] = useState(null); // { name, email, phone, boutiqueName, address, city, country, pincode }
