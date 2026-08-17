@@ -28,8 +28,7 @@ class ErrorBoundary extends Component {
           <button
             onClick={() => {
               try {
-                localStorage.removeItem('userWishlist');
-                localStorage.removeItem('userCart');
+                localStorage.clear();
               } catch(e) {}
               window.location.reload();
             }}

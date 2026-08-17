@@ -104,8 +104,12 @@ export default function App() {
   };
 
   const [noidaFactoryData, setNoidaFactoryData] = useState(() => {
-    const saved = localStorage.getItem('adminNoidaFactory');
-    return saved ? JSON.parse(saved) : defaultNoidaFactoryData;
+    try {
+      const saved = localStorage.getItem('adminNoidaFactory');
+      return saved ? JSON.parse(saved) : defaultNoidaFactoryData;
+    } catch (e) {
+      return defaultNoidaFactoryData;
+    }
   });
 
   useEffect(() => {
