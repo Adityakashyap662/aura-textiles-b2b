@@ -332,10 +332,12 @@ export default function App() {
     return () => clearInterval(interval);
   }, [fetchHeroBanners]);
 
-  const activeHeroBanners = dynamicHeroBanners.length > 0 ? dynamicHeroBanners : defaultFallbackHeroBanners;
+  const activeHeroBanners = (Array.isArray(dynamicHeroBanners) && dynamicHeroBanners.length > 0)
+    ? dynamicHeroBanners
+    : defaultFallbackHeroBanners;
 
-  // Auto-slide hero banner: Only image slides timer (4.5s). For video slides, run video complete and transition onEnded!
-  const currentHeroSlide = activeHeroBanners[heroSlideIdx];
+  const safeSlideIdx = heroSlideIdx % activeHeroBanners.length;
+  const currentHeroSlide = activeHeroBanners[safeSlideIdx] || activeHeroBanners[0];
 
   useEffect(() => {
     // If current active slide is a video, do NOT auto-timer transition! The video's onEnded event will handle transition!
@@ -1865,11 +1867,11 @@ export default function App() {
         <main>
           {/* Multiple Hero Banners Carousel with Video & Image Support */}
           <section style={{ position: 'relative', height: '480px', overflow: 'hidden' }}>
-            {activeHeroBanners[heroSlideIdx]?.video ? (
+            {currentHeroSlide?.video ? (
               <video
-                key={activeHeroBanners[heroSlideIdx].video}
-                src={activeHeroBanners[heroSlideIdx].video}
-                poster={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&auto=format&fit=crop&q=75'}
+                key={currentHeroSlide.video}
+                src={currentHeroSlide.video}
+                poster={currentHeroSlide?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1200&auto=format&fit=crop&q=75'}
                 preload="metadata"
                 autoPlay
                 muted
@@ -1881,8 +1883,8 @@ export default function App() {
               />
             ) : (
               <img
-                src={activeHeroBanners[heroSlideIdx]?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80'}
-                alt={activeHeroBanners[heroSlideIdx]?.title}
+                src={currentHeroSlide?.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&auto=format&fit=crop&q=80'}
+                alt={currentHeroSlide?.title || 'Hero Banner'}
                 loading="eager"
                 decoding="async"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.75)', transition: 'all 0.6s ease' }}
@@ -1900,18 +1902,18 @@ export default function App() {
             >
               <div style={{ maxWidth: '1280px', margin: '0 auto', width: '100%' }}>
                 <span className="badge-pcs" style={{ marginBottom: '16px', display: 'inline-block' }}>
-                  {activeHeroBanners[heroSlideIdx]?.subtitle || "WOMEN'S WHOLESALE EXCLUSIVES"}
+                  {currentHeroSlide?.subtitle || "WOMEN'S WHOLESALE EXCLUSIVES"}
                 </span>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '44px', fontWeight: '800', lineHeight: '1.15', marginBottom: '16px', maxWidth: '750px', color: '#fff', textShadow: '0 2px 14px rgba(0,0,0,0.9)' }}>
-                  {activeHeroBanners[heroSlideIdx]?.title}
+                  {currentHeroSlide?.title}
                 </h1>
                 <p style={{ fontSize: '16px', color: '#cbd5e1', maxWidth: '650px', marginBottom: '28px', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
-                  {activeHeroBanners[heroSlideIdx]?.desc}
+                  {currentHeroSlide?.desc}
                 </p>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => {
-                      const target = activeHeroBanners[heroSlideIdx]?.targetUrl || activeHeroBanners[heroSlideIdx]?.catId || 'all';
+                      const target = currentHeroSlide?.targetUrl || currentHeroSlide?.catId || 'all';
                       if (target.startsWith('http://') || target.startsWith('https://')) {
                         window.open(target, '_blank');
                       } else if (target.startsWith('/catalog/')) {
@@ -1923,7 +1925,7 @@ export default function App() {
                     }}
                     className="btn-gold"
                   >
-                    {activeHeroBanners[heroSlideIdx]?.ctaText || 'Explore Collection'} <ChevronRight size={18} />
+                    {currentHeroSlide?.ctaText || 'Explore Collection'} <ChevronRight size={18} />
                   </button>
                 </div>
               </div>

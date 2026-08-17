@@ -22,13 +22,17 @@ class ErrorBoundary extends Component {
       return (
         <div style={{ minHeight: '100vh', background: '#0b0c10', color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px', textAlign: 'center' }}>
           <h2 style={{ fontSize: '24px', color: '#d4af37', fontWeight: '800', marginBottom: '12px' }}>Aura Textiles — System Refresh</h2>
-          <p style={{ color: '#cbd5e1', fontSize: '14px', maxWidth: '500px', marginBottom: '24px' }}>
+          <p style={{ color: '#cbd5e1', fontSize: '14px', maxWidth: '500px', marginBottom: '12px' }}>
             The application experienced a temporary cache state update. Click below to restore full storefront view.
           </p>
+          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', color: '#f87171', padding: '12px', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', maxWidth: '600px', marginBottom: '20px', wordBreak: 'break-all' }}>
+            {this.state.error ? this.state.error.toString() : 'Unknown Render Error'}
+          </div>
           <button
             onClick={() => {
               try {
                 localStorage.clear();
+                sessionStorage.clear();
               } catch(e) {}
               window.location.reload();
             }}
